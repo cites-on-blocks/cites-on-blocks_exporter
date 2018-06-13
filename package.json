@@ -25,6 +25,8 @@
   "homepage": "https://github.com/cites-on-blocks/cites-on-blocks_exporter#readme",
   "dependencies": {
     "http": "^0.0.0",
-    "koa": "^2.5.1"
+    "https": "^1.0.0",
+    "koa": "^2.5.1",
+    "koa-sslify": "^2.1.2"
   }
 }
