@@ -4,6 +4,7 @@ const fs = require('fs')
 const execSync = require('child_process').execSync
 
 // Configurations
+const log_prop = require(__dirname + '/config/log_prop.js')
 const ssl_prop = require(__dirname + '/config/ssl_prop.js')
 
 /* Properties */
@@ -17,12 +18,37 @@ const cmd_generateCert =
 const exec_options = { stdio: 'ignore' }
 
 /**
+ * Function which initialize the logging.
+ * By this it read in the logging configuration and check if every necessary file  object exist.
+ * In case everything is already fine, this function does nothing.
+ */
+const initLogging = () => {
+  // Create the folder for all log files, if it does not exit yet.
+  if (!fs.existsSync(log_prop.path_dir)) {
+    console.log('Initialize the logging directory...')
+    fs.mkdirSync(log_prop.path_dir)
+  }
+
+  // Iterate over all defined log files and create them if necessary.
+  for (let file in log_prop.path_files) {
+    const logFile = log_prop.path_files[file]
+
+    // Check if this file already exist.
+    if (!fs.existsSync(logFile)) {
+      console.log('Create log file for ' + file)
+      fs.closeSync(fs.openSync(logFile, 'w'))
+    }
+  }
+}
+
+/**
  * Function which initialize the SSL base.
  * This includes to check if the SSL key and certificate exist, which are
  * required by the HTTPS protocol for the server.
  * If not so, the user gets informed about that.
  * In case the server has been started in development environment, both files
  * get generated automatically.
+ * In case everything is already fine, this function does nothing.
  */
 const initSSL = env => {
   // Create the folder where the key and certificate are placed, if necessary.
@@ -67,5 +93,6 @@ const initSSL = env => {
 
 // Define the export.
 module.exports = {
+  initLogging: initLogging,
   initSSL: initSSL
 }
