@@ -1,0 +1,30 @@
+{
+  "name": "cites_permit_export-service",
+  "version": "1.0.0",
+  "description": "This is a server implementation to export permits formatted with XML from the distributed CITES application on the Ethereum blockchain.",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "NODE_ENV='development' node src/server.js",
+    "prd": "NODE_ENV='production' node src/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cites-on-blocks/cites-on-blocks_exporter.git"
+  },
+  "keywords": [
+    "cites",
+    "koajs",
+    "restful",
+    "ethereum"
+  ],
+  "author": "Thore Weilbier",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/cites-on-blocks/cites-on-blocks_exporter/issues"
+  },
+  "homepage": "https://github.com/cites-on-blocks/cites-on-blocks_exporter#readme",
+  "dependencies": {
+    "http": "^0.0.0",
+    "koa": "^2.5.1"
+  }
+}
