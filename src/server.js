@@ -7,8 +7,9 @@ const sslify = require('koa-sslify') // Force HTTPS connections.
 const logger_bunyan = require('koa-bunyan-logger') // To log connections and other content.
 
 // Own
-const bootstrap = require(__dirname + '/bootstrap.js')
-const logger = require(__dirname + '/logger.js')
+const bootstrap = require(__dirname + '/bootstrap.js') // Utility functions to bootstrap the server.
+const logger = require(__dirname + '/logger.js') // The bunyan logger instance.
+const exportRouter = require(__dirname + '/router/exporter.js') // The koa router which implements the API to export permits.
 
 /* Initiate Modules */
 // Create the Koa application.
@@ -31,11 +32,8 @@ app.use(logger_bunyan.requestLogger(logger.logger))
 bootstrap.initSSL(app.env)
 app.use(sslify(ssl_prop.options_sslify(app.env)))
 
-// Simple function to set a example body.
-app.use(async (ctx, next) => {
-  ctx.body = 'Hello Work'
-  next()
-})
+// Add the router(s).
+app.use(exportRouter.routes())
 
 /* Start Server */
 http.createServer(app.callback()).listen(general_prop.port_http)
