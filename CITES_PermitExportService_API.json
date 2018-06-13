@@ -1,0 +1,208 @@
+{
+  "openapi" : "3.0.0",
+  "servers" : [ {
+    "description" : "SwaggerHub API Auto Mocking",
+    "url" : "https://virtserver.swaggerhub.com/CITES/PermitExportService/1.0.0"
+  } ],
+  "info" : {
+    "title" : "CITES Permit Export Service",
+    "version" : "1.0.0",
+    "description" : "This is the API to export permits formatted with XML from the distributed CITES application on the Ethereum blockchain.",
+    "contact" : {
+      "email" : "thore.h.weilbier@campus.tu-berlin.de"
+    },
+    "license" : {
+      "name" : "MIT",
+      "url" : "http://github.com/cites-on-blocks/cites-on-block_exporter/LICENSE.md"
+    }
+  },
+  "tags" : [ {
+    "name" : "Export",
+    "description" : "Functions to directly retrieve a converted permit.\n"
+  } ],
+  "paths" : {
+    "/api/{permitId}" : {
+      "get" : {
+        "tags" : [ "Export" ],
+        "summary" : "Export a permit as XML file.",
+        "operationId" : "permitXMLExport",
+        "description" : "By passing the ID of the permit, this permit will be searched on the blockchain, read in and converted into the official XML format of the CITES.\nAs response the XML file itself will be transfered.\nGenerated XML files are stored by the server internally for a specific time.\nDuring this time, the XML file is reused and the response is quicker.\nCause the RESTful definition of resources, only one permit can be retrieved with one request.\n",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "permitId",
+          "description" : "The unique ID of the permit to export as XML.\nThe permit with this ID have to exist already on the blockchain.\nThis is cause only already created permits can be exported.\n",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "bytes32",
+            "example" : "0xad080a66d2d81f8c0ed1640f1a0cb049714b33901f9f47797f7842e232c8fef0"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "An already converted XML version of this permit could been found and respond.",
+            "content" : {
+              "application/xml" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/permit"
+                }
+              }
+            }
+          },
+          "201" : {
+            "description" : "The permit could been found on the blockchain and has been converted to a new XML file and respond this.",
+            "content" : {
+              "application/xml" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/permit"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "No permit could been found on the blockchain for the provided permit ID."
+          },
+          "500" : {
+            "description" : "Something went wrong on the servers internal state."
+          }
+        }
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "permit" : {
+        "type" : "object",
+        "properties" : {
+          "permitId" : {
+            "description" : "The ID of the permit, this document describes.",
+            "type" : "string",
+            "format" : "bytes32",
+            "xml" : {
+              "attribute" : true
+            },
+            "example" : "0xad080a66d2d81f8c0ed1640f1a0cb049714b33901f9f47797f7842e232c8fef0"
+          },
+          "exportCountry" : {
+            "$ref" : "#/components/schemas/country"
+          },
+          "importCountry" : {
+            "$ref" : "#/components/schemas/country"
+          },
+          "permitType" : {
+            "description" : "Enumeration of the permit type.\n0 - export\n1 - re-export\n2 - other\n",
+            "type" : "string",
+            "format" : "uint8",
+            "enum" : [ 0, 1, 2 ],
+            "example" : 1
+          },
+          "importer" : {
+            "$ref" : "#/components/schemas/participant"
+          },
+          "exporter" : {
+            "$ref" : "#/components/schemas/participant"
+          },
+          "processed" : {
+            "description" : "Flag which mark a permit as already processed by the importing country.\nIs set to false per default on creation.\nCan only be set to True once.\n",
+            "type" : "boolean",
+            "format" : "bool",
+            "default" : "False",
+            "example" : "True"
+          },
+          "accepted" : {
+            "description" : "Flag which mark a permit as accepted or not by the importing country.\nWill be set on processing the permit.\nBy this it can be set only once.\nPer default not defined, since the permit gets processed.\n",
+            "type" : "boolean",
+            "format" : "bool",
+            "default" : "undefined",
+            "example" : "False"
+          },
+          "specimens" : {
+            "description" : "The list of specimens which gets ex- and imported by this permit.",
+            "type" : "array",
+            "xml" : {
+              "wrapped" : true,
+              "name" : "specimen"
+            },
+            "items" : {
+              "$ref" : "#/components/schemas/specimen"
+            }
+          }
+        }
+      },
+      "country" : {
+        "description" : "The two char long code of the ex- or importing country",
+        "type" : "string",
+        "format" : "bytes2",
+        "example" : "DE"
+      },
+      "participant" : {
+        "description" : "A participant which is either the exporter who order this permit or the importer who gets the specimens.\n",
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "description" : "The given and surname of the participant.",
+            "type" : "string",
+            "format" : "bytes32",
+            "example" : "Harry Smith"
+          },
+          "street" : {
+            "description" : "The official street and house number of the participant.",
+            "type" : "string",
+            "format" : "bytes32",
+            "example" : "Regent Street 16"
+          },
+          "city" : {
+            "description" : "The city where the participant is registered.",
+            "type" : "string",
+            "format" : "bytes32",
+            "example" : "London"
+          }
+        }
+      },
+      "specimen" : {
+        "description" : "A specified animal type which gets ex- and imported by a permit.\nThey are grouped by their specie and summed up to a given quantitiy.\n",
+        "type" : "object",
+        "properties" : {
+          "quantitiy" : {
+            "description" : "The number of units exported of this specimen.",
+            "type" : "integer",
+            "format" : "uint",
+            "example" : 7
+          },
+          "scientificName" : {
+            "description" : "The scientific name of this specimen.",
+            "type" : "string",
+            "format" : "bytes32",
+            "example" : "Crocodylia"
+          },
+          "commonName" : {
+            "description" : "The common name of this specimen.",
+            "type" : "string",
+            "format" : "bytes32",
+            "example" : "Crocodile"
+          },
+          "description" : {
+            "description" : "Some additional notes for this specimen for this permit.",
+            "type" : "string",
+            "format" : "bytes32",
+            "example" : "Big green alligators"
+          },
+          "originId" : {
+            "description" : "The ID of the permit this units have get exported the first time.\nLeaves empty if this is the first export.\n",
+            "type" : "string",
+            "format" : "bytes32",
+            "default" : "",
+            "example" : "0xs7dfe66d2dd81f8c0ed16dwdnj8jid2365hd7637d4hjuf78322k42e232ded38d"
+          },
+          "reExportId" : {
+            "description" : "The ID of the last permit this units have been exported before this one.\nLeaves empty if this is the first export.\nIs same as the origin ID, if this is the second export.\n",
+            "type" : "string",
+            "format" : "bytes32",
+            "default" : "",
+            "example" : "0x89213mdkd012d3njnkjnhjhsdc7wasqqq7euonjbe282ew280123jnj40bk213kj"
+          }
+        }
+      }
+    }
+  }
+}
