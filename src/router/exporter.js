@@ -6,6 +6,7 @@ const router = require('koa-router') // The parent object for the router.
 const logger = require(__dirname + '/../logger.js').logger // To log informations persistently.
 const routeNames = require(__dirname + '/../constants/routeNames.js') // The names of the routes of this router as enumeration.
 const arguments = require(__dirname + '/../constants/arguments.js') // The argument identifier used for the routes in this router.
+const contractReader = require(__dirname + '/../api/contract_reader.js') // To read data on the blockchain.
 
 /* Initialize the router */
 const exportRouter = new router()
@@ -26,18 +27,28 @@ exportRouter.param(arguments.PERMIT_ID, async (id, ctx, next) => {
   logger.info('URL parameter validation for parameter _permitId_.')
   logger.info('Verify the ID: ' + id)
 
-  // Dummy value to simulate a decision.
-  // TODO: Real check for the permit on the blockchain.
-  const valid = true
+  // TODO: Check if a converted XML already exist.
 
-  if (valid) {
-    // TODO: Check if a converted XML already exist.
+  // Try to get the permit from the blockchain.
+  try {
+    ctx.permit = {}
+    ctx.permit.json = await contractReader.getPermitById(id)
+  } catch (err) {
+    logger.error(
+      "Can't verify permit ID. Must response with server internal error code."
+    )
+    ctx.status = 500
+  }
+
+  // Check if the permit has been found or not.
+  // The permit identifier exists, if a object as permit exists.
+  if (ctx.permit.json) {
     ctx.permit = 'this should be the correct path later on'
     return next()
   } else {
-    const message = 'The given permit ID (' + id + ') does not exist!'
+J   const message = 'The given permit ID (' + id + ') does not exist!'
     logger.info(message)
-    ctx.body = message
+    ctxjbody = message
     ctx.status = 404
   }
 })
@@ -62,14 +73,19 @@ exportRouter.get(
 
     // Check if the permit does already exist in XML form.
     // This could has been added by the parameter check function.
-    if (ctx.permit) {
+    if (ctx.permit && ctx.permit.xml) {
       ctx.body = ctx.permit
-    } else {
+      ctx.status = 200
+    } else if (ctx.permit && ctx.permit.json) {
       // TODO: Convert the permit to XML here.
-      ctx.body = 'Fake XML'
+      ctx.body = JSON.stringify(ctx.permit.json)
+      ctx.status = 200
+    } else {
+      logger.err(
+        'The context property for the permit does not exist! Must response server internal error code.'
+      )
+      ctx.status = 500
     }
-
-    ctx.status = 200
   }
 )
 
