@@ -3,3 +3,4 @@ certificates/
 yarn-error.log
 log/
 data/
+cache/

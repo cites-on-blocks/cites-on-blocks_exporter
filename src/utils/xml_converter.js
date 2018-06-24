@@ -36,14 +36,28 @@ async function hex2String(hex) {
 
 /* Functions */
 
-const convertPermitToXml = async function(id, object) {
+/**
+ * Convert a permit into an XML stream.
+ * The permit is defined by a given identifier and its describing object in JSON.
+ * The conversion contains a restructuring of the data to the standard format structure.
+ *
+ * @param permitId      - identifier of the permit to convert
+ * @param permitObject  - object of the permit to convert
+ *
+ * @return converted XML string of the permit
+ */
+const convertPermitToXml = async function(permitId, permitObject) {
   logger.info('Convert a permit to XML.')
 
   // Build a modified JSON by the original one.
   let convertedJson = {}
-  convertedJson._attributes = { id: id }
-  convertedJson[xmlPropertyKeys.EXPORT_COUNTRY] = await hex2String(object[0])
-  convertedJson[xmlPropertyKeys.IMPORT_COUNTRY] = await hex2String(object[1])
+  convertedJson._attributes = { id: permitId }
+  convertedJson[xmlPropertyKeys.EXPORT_COUNTRY] = await hex2String(
+    permitObject[0]
+  )
+  convertedJson[xmlPropertyKeys.IMPORT_COUNTRY] = await hex2String(
+    permitObject[1]
+  )
 
   // Convert it to JSON (mark that this require a single top property).
   const wrapperJson = { permit: convertedJson }

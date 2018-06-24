@@ -1,6 +1,7 @@
 /* Load Modules */
 // 3rd party modules
 const router = require('koa-router') // The parent object for the router.
+const fs = require('fs') // To read cached permit files.
 
 // Own
 const logger = require(__dirname + '/../logger.js').logger // To log information persistently.
@@ -8,6 +9,9 @@ const routeNames = require(__dirname + '/../constants/routeNames.js') // The nam
 const arguments = require(__dirname + '/../constants/arguments.js') // The argument identifier used for the routes in this router.
 const contractReader = require(__dirname + '/../utils/contract_reader.js') // To read data on the blockchain.
 const xmlConverter = require(__dirname + '/../utils/xml_converter.js') // To convert blockchain data to XML representational strings.
+const cacheHandler = require(__dirname + '/../utils/cache_handler.js') // Get access to the cached converted permit files.
+const conversion_types = require(__dirname +
+  '/../constants/conversion_types.js') // The list of types a permit can get converted to.
 
 /* Initialize the router */
 const exportRouter = new router()
@@ -28,8 +32,6 @@ exportRouter.param(arguments.PERMIT_ID, async (id, ctx, next) => {
   logger.info('URL parameter validation for parameter _permitId_.')
   logger.info('Verify the ID: ' + id)
 
-  // TODO: Check if a converted XML already exist.
-
   // Try to get the permit from the blockchain.
   try {
     ctx.permit = {}
@@ -45,6 +47,8 @@ exportRouter.param(arguments.PERMIT_ID, async (id, ctx, next) => {
   // Check if the permit has been found or not.
   // The permit identifier exists, if a object as permit exists.
   if (ctx.permit.json) {
+    // Try to get already converted permit files which has get cached.
+    ctx.permit.cache = await cacheHandler.getPermit(id)
     return next()
   } else {
     const message = 'The given permit ID (' + id + ') does not exist!'
@@ -70,19 +74,33 @@ exportRouter.get(
   '/:' + arguments.PERMIT_ID,
   async (ctx, next) => {
     logger.info('Export an permit as XML.')
+    const responseType = 'text/xml'
 
     // Check if the permit does already exist in XML form.
     // This could has been added by the parameter check function.
-    if (ctx.permit && ctx.permit.xml) {
-      ctx.body = ctx.permit
+    if (
+      ctx.permit &&
+      ctx.permit.cache &&
+      ctx.permit.cache[conversion_types.XML]
+    ) {
+      // Read the cached file.
+      logger.info('Load already converted file from the cache.')
+      ctx.body = fs.readFileSync(ctx.permit.cache[conversion_types.XML])
+      ctx.type = responseType
       ctx.status = 200
     } else if (ctx.permit && ctx.permit.json) {
-      // TODO: Convert the permit to XML here.
-      ctx.body = await xmlConverter.convertPermitToXml(
-        ctx.params[arguments.PERMIT_ID],
+      // Convert permit to XML and cache it afterwards.
+      logger.info('Must do a new conversion of this permit to XML.')
+      const permitId = ctx.params[arguments.PERMIT_ID]
+      const xml = await xmlConverter.convertPermitToXml(
+        permitId,
         ctx.permit.json
       )
-      ctx.type = 'text/xml'
+      cacheHandler.cachePermit(permitId, xml, conversion_types.XML) // Don't wait for it until response.
+
+      // Define the response.
+      ctx.body = xml
+      ctx.type = responseType
       ctx.status = 200
     } else {
       logger.info(

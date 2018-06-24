@@ -36,10 +36,8 @@ const getPermitById = async function(permitId) {
   logger.info('Search for permit with ID: ' + permitId)
 
   try {
-    logger.info('1')
     // Try to get the permit from the contract.
     const permit = await permitFactoryContract.permits(permitId)
-    logger.info('2')
 
     // Check if this is an 'empty' permit.
     if (
