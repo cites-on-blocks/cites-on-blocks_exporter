@@ -17,10 +17,8 @@ const web3 = new Web3(
 )
 const permitFactoryInfo = contract_prop[contractNames.PERMIT_FACTORY]
 
-const permitFactoryContract = new web3.eth.Contract(
-  permitFactoryInfo.abi,
-  permitFactoryInfo.address
-)
+let permitFactoryContract = web3.eth.contract(permitFactoryInfo.abi)
+permitFactoryContract = permitFactoryContract.at(permitFactoryInfo.address)
 
 /* Functions */
 
@@ -38,8 +36,10 @@ const getPermitById = async function(permitId) {
   logger.info('Search for permit with ID: ' + permitId)
 
   try {
+    logger.info('1')
     // Try to get the permit from the contract.
-    const permit = await permitFactoryContract.methods.permits(permitId).call()
+    const permit = await permitFactoryContract.permits(permitId)
+    logger.info('2')
 
     // Check if this is an 'empty' permit.
     if (
@@ -53,8 +53,8 @@ const getPermitById = async function(permitId) {
       return permit
     }
   } catch (err) {
-    logger.err('Something went wrong while try to get the permit.')
-    logger.err(err)
+    logger.info('Something went wrong while try to get the permit.')
+    logger.info(err)
     throw err
   }
 }

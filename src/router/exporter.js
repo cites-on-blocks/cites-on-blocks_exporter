@@ -3,10 +3,11 @@
 const router = require('koa-router') // The parent object for the router.
 
 // Own
-const logger = require(__dirname + '/../logger.js').logger // To log informations persistently.
+const logger = require(__dirname + '/../logger.js').logger // To log information persistently.
 const routeNames = require(__dirname + '/../constants/routeNames.js') // The names of the routes of this router as enumeration.
 const arguments = require(__dirname + '/../constants/arguments.js') // The argument identifier used for the routes in this router.
-const contractReader = require(__dirname + '/../api/contract_reader.js') // To read data on the blockchain.
+const contractReader = require(__dirname + '/../utils/contract_reader.js') // To read data on the blockchain.
+const xmlConverter = require(__dirname + '/../utils/xml_converter.js') // To convert blockchain data to XML representational strings.
 
 /* Initialize the router */
 const exportRouter = new router()
@@ -34,21 +35,21 @@ exportRouter.param(arguments.PERMIT_ID, async (id, ctx, next) => {
     ctx.permit = {}
     ctx.permit.json = await contractReader.getPermitById(id)
   } catch (err) {
-    logger.error(
+    logger.info(
       "Can't verify permit ID. Must response with server internal error code."
     )
     ctx.status = 500
+    return
   }
 
   // Check if the permit has been found or not.
   // The permit identifier exists, if a object as permit exists.
   if (ctx.permit.json) {
-    ctx.permit = 'this should be the correct path later on'
     return next()
   } else {
-J   const message = 'The given permit ID (' + id + ') does not exist!'
+    const message = 'The given permit ID (' + id + ') does not exist!'
     logger.info(message)
-    ctxjbody = message
+    ctx.body = message
     ctx.status = 404
   }
 })
@@ -69,7 +70,6 @@ exportRouter.get(
   '/:' + arguments.PERMIT_ID,
   async (ctx, next) => {
     logger.info('Export an permit as XML.')
-    logger.info('Permit ID is: ' + ctx.params[arguments.PERMIT_ID])
 
     // Check if the permit does already exist in XML form.
     // This could has been added by the parameter check function.
@@ -78,10 +78,14 @@ exportRouter.get(
       ctx.status = 200
     } else if (ctx.permit && ctx.permit.json) {
       // TODO: Convert the permit to XML here.
-      ctx.body = JSON.stringify(ctx.permit.json)
+      ctx.body = await xmlConverter.convertPermitToXml(
+        ctx.params[arguments.PERMIT_ID],
+        ctx.permit.json
+      )
+      ctx.type = 'text/xml'
       ctx.status = 200
     } else {
-      logger.err(
+      logger.info(
         'The context property for the permit does not exist! Must response server internal error code.'
       )
       ctx.status = 500
