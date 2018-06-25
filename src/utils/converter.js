@@ -4,10 +4,12 @@ const xml = require('xml-js')
 
 // Own
 const logger = require(__dirname + '/../logger.js').logger // To log information persistently.
-const xmlPropertyKeys = require(__dirname + '/../constants/xmlPropertyKeys.js')
 const general_prop = require(__dirname + '/../config/general_prop.js')(
   process.env.NODE_ENV
 )
+const conversion_types = require(__dirname +
+  '/../constants/conversion_types.js') // To specify to what type to convert.
+const xmlPropertyKeys = require(__dirname + '/../constants/xmlPropertyKeys.js')
 
 /* Utilities */
 
@@ -34,8 +36,6 @@ async function hex2String(hex) {
   }
 }
 
-/* Functions */
-
 /**
  * Convert a permit into an XML stream.
  * The permit is defined by a given identifier and its describing object in JSON.
@@ -46,7 +46,7 @@ async function hex2String(hex) {
  *
  * @return converted XML string of the permit
  */
-const convertPermitToXml = async function(permitId, permitObject) {
+async function convertPermitToXml(permitId, permitObject) {
   logger.info('Convert a permit to XML.')
 
   // Build a modified JSON by the original one.
@@ -68,7 +68,34 @@ const convertPermitToXml = async function(permitId, permitObject) {
   return xmlPermit
 }
 
+/**
+ * Convert a permit into a PDF.
+ * The permit is defined by a given identifier and its describing object in JSON.
+ *
+ * @param permitId      - identifier of the permit to convert
+ * @param permitObject  - object of the permit to convert
+ *
+ * @return converted PDF
+ */
+
+async function convertPermitToPdf(permitId, permitObject) {
+  throw new Error('PDF conversion is not supported so far!')
+}
+
+/* Functions */
+
+const convertPermit = async function(permitId, permitObject, type) {
+  // Choose the correct conversion function by the type.
+  switch (type) {
+    case conversion_types.XML:
+      return convertPermitToXml(permitId, permitObject)
+
+    case conversion_types.PDF:
+      return convertPermitToPdf(permitId, permitObject)
+  }
+}
+
 // Define what to export.
 module.exports = {
-  convertPermitToXml: convertPermitToXml
+  convertPermit: convertPermit
 }

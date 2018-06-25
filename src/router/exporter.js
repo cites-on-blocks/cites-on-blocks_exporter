@@ -8,7 +8,7 @@ const logger = require(__dirname + '/../logger.js').logger // To log information
 const routeNames = require(__dirname + '/../constants/routeNames.js') // The names of the routes of this router as enumeration.
 const arguments = require(__dirname + '/../constants/arguments.js') // The argument identifier used for the routes in this router.
 const contractReader = require(__dirname + '/../utils/contract_reader.js') // To read data on the blockchain.
-const xmlConverter = require(__dirname + '/../utils/xml_converter.js') // To convert blockchain data to XML representational strings.
+const converter = require(__dirname + '/../utils/converter.js') // To convert blockchain data to XML representational strings.
 const cacheHandler = require(__dirname + '/../utils/cache_handler.js') // Get access to the cached converted permit files.
 const conversion_types = require(__dirname +
   '/../constants/conversion_types.js') // The list of types a permit can get converted to.
@@ -92,9 +92,10 @@ exportRouter.get(
       // Convert permit to XML and cache it afterwards.
       logger.info('Must do a new conversion of this permit to XML.')
       const permitId = ctx.params[arguments.PERMIT_ID]
-      const xml = await xmlConverter.convertPermitToXml(
+      const xml = await converter.convertPermit(
         permitId,
-        ctx.permit.json
+        ctx.permit.json,
+        conversion_types.XML
       )
       cacheHandler.cachePermit(permitId, xml, conversion_types.XML) // Don't wait for it until response.
 
