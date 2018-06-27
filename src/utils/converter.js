@@ -127,7 +127,7 @@ async function restructurePermitToStandardFormat(permitId, permitObject) {
   const standardFormat = { [xmlPropertyKeys.PERMIT.BASE]: restructuredPermit }
 
   // Log and return.
-  logger.info('Restructuring done:' + JSON.stringify(standardFormat))
+  logger.info('Restructuring done.')
   return standardFormat
 }
 
@@ -190,7 +190,7 @@ async function restructureSpecimenToStandardFormat(
   }
 
   // Log and return.
-  logger.info('Restructuring done:' + JSON.stringify(standardFormat))
+  logger.info('Restructuring done.')
   return standardFormat
 }
 

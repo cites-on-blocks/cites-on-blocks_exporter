@@ -4,9 +4,6 @@ const fs = require('fs')
 const execSync = require('child_process').execSync
 
 // Configurations
-const general_prop = require(__dirname + '/config/general_prop.js')(
-  process.env.NODE_ENV
-)
 const log_prop = require(__dirname + '/config/log_prop.js')
 const ssl_prop = require(__dirname + '/config/ssl_prop.js')
 
@@ -20,17 +17,6 @@ const cmd_generateCert =
   ssl_prop.paths.cert +
   ' -days 3650'
 const exec_options = { stdio: 'ignore' }
-
-/**
- * Function which initialize the caching.
- * This includes to create the cache directory if it does not exist so far.
- */
-const initCache = env => {
-  if (!fs.existsSync(general_prop.cacheFolder)) {
-    console.log('Initialize cache directory...')
-    fs.mkdirSync(general_prop.cacheFolder)
-  }
-}
 
 /**
  * Function which initialize the logging.
@@ -108,7 +94,6 @@ const initSSL = env => {
 
 // Define the export.
 module.exports = {
-  initCache: initCache,
   initLogging: initLogging,
   initSSL: initSSL
 }

@@ -11,6 +11,8 @@ const arguments = require(__dirname + '/../constants/arguments.js') // The argum
 const contractReader = require(__dirname + '/../utils/contract_reader.js') // To read data on the blockchain.
 const converter = require(__dirname + '/../utils/converter.js') // To convert blockchain data to XML representational strings.
 const cacheHandler = require(__dirname + '/../utils/cache_handler.js') // Get access to the cached converted permit files.
+const blockchainObjects = require(__dirname +
+  '/../constants/blockchainObjects.js') // Differ between the different object in the blockchain.
 const conversion_types = require(__dirname +
   '/../constants/conversion_types.js') // The list of types a permit can get converted to.
 
@@ -41,7 +43,10 @@ exportRouter.param(arguments.PERMIT_ID, async (id, ctx, next) => {
   // The permit identifier exists, if an object as permit exists.
   if (ctx.permit.json) {
     // Try to get already converted permit files which has get cached.
-    ctx.permit.cache = await cacheHandler.getPermit(id)
+    ctx.permit.cache = await cacheHandler.getObject(
+      blockchainObjects.PERMIT,
+      id
+    )
     return next()
   } else {
     const message = 'The given permit ID (' + id + ') does not exist!'
@@ -72,11 +77,13 @@ exportRouter.param(arguments.SPECIMEN_ID, async (id, ctx, next) => {
   // The specimen identifier exists, if an object as permit exists.
   if (ctx.specimen.json) {
     // Try to get already converted permit files which has get cached.
-    // TODO: Implement this in the cache
-    // ctx.specimen.cache = await cacheHandler.getSpecimen(id)
+    ctx.specimen.cache = await cacheHandler.getObject(
+      blockchainObjects.SPECIMEN,
+      id
+    )
     return next()
   } else {
-    const message = 'The given permit ID (' + id + ') does not exist!'
+    const message = 'The given specimen ID (' + id + ') does not exist!'
     logger.info(message)
     ctx.body = message
     ctx.status = 404
@@ -101,7 +108,7 @@ exportRouter.get(
     logger.info('Export an permit as XML.')
     const responseType = 'text/xml'
 
-    // Check if the permit does already exist in XML form.
+    // Check if the permit does already exist for the conversion type.
     // This could has been added by the parameter check function.
     if (
       ctx.permit &&
@@ -122,7 +129,12 @@ exportRouter.get(
         ctx.permit.json,
         conversion_types.XML
       )
-      cacheHandler.cachePermit(permitId, xml, conversion_types.XML) // Don't wait for it until response.
+      cacheHandler.cacheObject(
+        blockchainObjects.PERMIT,
+        permitId,
+        xml,
+        conversion_types.XML
+      ) // Don't wait for it until response.
 
       // Define the response.
       ctx.body = xml
@@ -153,9 +165,8 @@ exportRouter.get(
     logger.info('Export an specimen as XML.')
     const responseType = 'text/xml'
 
-    // Check if the specimen does already exist in XML form.
+    // Check if the specimen does already exist for the conversion type.
     // This could has been added by the parameter check function.
-    // TODO: Implement the cache for this. Condition will fail always so far.
     if (
       ctx.specimen &&
       ctx.specimen.cache &&
@@ -163,7 +174,8 @@ exportRouter.get(
     ) {
       // Read the cached file.
       logger.info('Load already converted file from the cache.')
-      ctx.body = fs.readFileSync(ctx.cache.cache[conversion_types.XML])
+      console.log(ctx.specimen.cache[conversion_types.XML])
+      ctx.body = fs.readFileSync(ctx.specimen.cache[conversion_types.XML])
       ctx.type = responseType
       ctx.status = 200
     } else if (ctx.specimen && ctx.specimen.json) {
@@ -175,8 +187,12 @@ exportRouter.get(
         ctx.specimen.json,
         conversion_types.XML
       )
-      // TODO: Implement this caching.
-      // cacheHandler.cachePermit(permitId, xml, conversion_types.XML) // Don't wait for it until response.
+      cacheHandler.cacheObject(
+        blockchainObjects.SPECIMEN,
+        specimenId,
+        xml,
+        conversion_types.XML
+      ) // Don't wait for it until response.
 
       // Define the response.
       ctx.body = xml

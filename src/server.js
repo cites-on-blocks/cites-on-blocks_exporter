@@ -32,9 +32,6 @@ app.use(logger_bunyan.requestLogger(logger.logger))
 bootstrap.initSSL(app.env)
 app.use(sslify(ssl_prop.options_sslify(app.env)))
 
-// Initialize the caching.
-bootstrap.initCache(app.env)
-
 // Add the router(s).
 app.use(exportRouter.routes())
 
