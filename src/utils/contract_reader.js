@@ -26,37 +26,92 @@ permitFactoryContract = permitFactoryContract.at(permitFactoryInfo.address)
  * Search for a permit defined by its given identifier in the contract.
  * If the specified permit does exist, it returns the whole permit object.
  * Else 'undefined' is the response.
- * This functions also meant for the purpose to check if the identifier is
- * an existing one.
  *
  * @param   permitId - string as the identifier of the permit
  * @return  permit   - object as the permit itself or 'undefined'
  */
-const getPermitById = async function(permitId) {
+const getPermitById = async permitId => {
   logger.info('Search for permit with ID: ' + permitId)
 
+  // Try to get the permit from the contract.
   try {
-    // Try to get the permit from the contract.
-    const permit = await permitFactoryContract.permits(permitId)
-
-    // Check if this is an 'empty' permit.
-    if (
-      permit.exportCountry === '0x0000' &&
-      permit.importCountry === '0x0000'
-    ) {
-      logger.info('No permit could been found for this ID.')
-      return undefined
-    } else {
-      logger.info('Permit could been found for this ID.')
-      return permit
-    }
+    const permit = await permitFactoryContract.getPermit(permitId)
+    logger.info('Permit could been found for this ID.')
+    return permit
   } catch (err) {
-    logger.info('Something went wrong while try to get the permit.')
-    logger.info(err)
-    throw err
+    logger.info('No permit could been found for this ID!')
+    return undefined
   }
 }
 
+/**
+ * Search for a specimen defined by its given identifier in the contract.
+ * If the specified specimen does exist, it returns the whole specimen object.
+ * Else 'undefined' is the response.
+ *
+ * @param   specimenId - string as the identifier of the specimen
+ * @return  specimen   - object as the specimen itself or 'undefined'
+ */
+const getSpecimenById = async specimenId => {
+  logger.info('Search for specimen with ID: ' + specimenId)
+
+  // Try to get the specimen from the contract.
+  try {
+    const specimen = await permitFactoryContract.getSpecimen(specimenId)
+    logger.info('Specimen could been found for this ID.')
+    return specimen
+  } catch (err) {
+    logger.info('No specimen could been found for this ID!')
+    return undefined
+  }
+}
+
+/**
+ * Get the processed flag for a permit defined by its given identifier in the contract.
+ * In case some serious issue has occurred, 'undefined' gets returned.
+ *
+ * @param   permitId  - string as the identifier of the permit
+ * @return  processed - value of the processed flag for the permit or 'undefined'
+ */
+const isPermitProcessed = async permitId => {
+  logger.info('Check for processed flag for permit with ID: ' + permitId)
+
+  // Try to get the processed flag from the contract for this permit.
+  try {
+    const processed = await permitFactoryContract.confirmed(permitId)
+    logger.info('Permit processed flag has been returned.')
+    return processed
+  } catch (err) {
+    logger.info('No processed flag could been found!')
+    return undefined
+  }
+}
+
+/**
+ * Get the accepted flag for a permit defined by its given identifier in the contract.
+ * In case some serious issue has occurred, 'undefined' gets returned.
+ *
+ * @param   permitId - string as the identifier of the permit
+ * @return  accepted - value of the accepted flag for the permit or 'undefined'
+ */
+const isPermitAccepted = async permitId => {
+  logger.info('Check for accepted flag for permit with ID: ' + permitId)
+
+  // Try to get the accepted flag from the contract for this permit.
+  try {
+    const accepted = await permitFactoryContract.accepted(permitId)
+    logger.info('Permit accepted flag has been returned.')
+    return accepted
+  } catch (err) {
+    logger.info('No accepted flag could been found!')
+    return undefined
+  }
+}
+
+// Define what will be exported.
 module.exports = {
-  getPermitById: getPermitById
+  getPermitById: getPermitById,
+  getSpecimenById: getSpecimenById,
+  isPermitProcessed: isPermitProcessed,
+  isPermitAccepted: isPermitAccepted
 }

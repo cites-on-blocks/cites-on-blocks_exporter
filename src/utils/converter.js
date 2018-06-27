@@ -10,6 +10,7 @@ const general_prop = require(__dirname + '/../config/general_prop.js')(
 const conversion_types = require(__dirname +
   '/../constants/conversion_types.js') // To specify to what type to convert.
 const xmlPropertyKeys = require(__dirname + '/../constants/xmlPropertyKeys.js')
+const contract_reader = require(__dirname + '/contract_reader.js')
 
 /* Utilities */
 
@@ -36,37 +37,165 @@ async function hex2String(hex) {
   }
 }
 
+/* XML */
+
 /**
- * Convert a permit into an XML stream.
+ * Convert a permit into standard format.
  * The permit is defined by a given identifier and its describing object in JSON.
  * The conversion contains a restructuring of the data to the standard format structure.
  *
  * @param permitId      - identifier of the permit to convert
  * @param permitObject  - object of the permit to convert
  *
- * @return converted XML string of the permit
+ * @return converted permit
  */
-async function convertPermitToXml(permitId, permitObject) {
-  logger.info('Convert a permit to XML.')
+async function convertPermitToStandardFormat(permitId, permitObject) {
+  logger.info('Convert a permit to standard format with ID: ' + permitId)
 
   // Build a modified JSON by the original one.
   let convertedJson = {}
   convertedJson._attributes = { id: permitId }
-  convertedJson[xmlPropertyKeys.EXPORT_COUNTRY] = await hex2String(
+
+  // Export/Import Country
+  convertedJson[xmlPropertyKeys.PERMIT.EXPORT_COUNTRY] = await hex2String(
     permitObject[0]
   )
-  convertedJson[xmlPropertyKeys.IMPORT_COUNTRY] = await hex2String(
+
+  convertedJson[xmlPropertyKeys.PERMIT.IMPORT_COUNTRY] = await hex2String(
     permitObject[1]
   )
 
-  // Convert it to JSON (mark that this require a single top property).
-  const wrapperJson = { permit: convertedJson }
-  const xmlPermit = xml.json2xml(wrapperJson, general_prop.xmlConverterConfig)
+  // Permit Type
+  convertedJson[xmlPropertyKeys.PERMIT.TYPE] = permitObject[2].toString()
+
+  // Importer
+  convertedJson[xmlPropertyKeys.PERMIT.IMPORTER] = {}
+  convertedJson[xmlPropertyKeys.PERMIT.IMPORTER][
+    xmlPropertyKeys.PARTICIPANT.NAME
+  ] = await hex2String(permitObject[3][0])
+
+  convertedJson[xmlPropertyKeys.PERMIT.IMPORTER][
+    xmlPropertyKeys.PARTICIPANT.STREET
+  ] = await hex2String(permitObject[3][1])
+
+  convertedJson[xmlPropertyKeys.PERMIT.IMPORTER][
+    xmlPropertyKeys.PARTICIPANT.CITY
+  ] = await hex2String(permitObject[3][2])
+
+  // Exporter
+  convertedJson[xmlPropertyKeys.PERMIT.EXPORTER] = {}
+  convertedJson[xmlPropertyKeys.PERMIT.EXPORTER][
+    xmlPropertyKeys.PARTICIPANT.NAME
+  ] = await hex2String(permitObject[4][0])
+
+  convertedJson[xmlPropertyKeys.PERMIT.EXPORTER][
+    xmlPropertyKeys.PARTICIPANT.STREET
+  ] = await hex2String(permitObject[4][1])
+
+  convertedJson[xmlPropertyKeys.PERMIT.EXPORTER][
+    xmlPropertyKeys.PARTICIPANT.CITY
+  ] = await hex2String(permitObject[4][2])
+
+  // Processed & Accepted Flags
+  convertedJson[
+    xmlPropertyKeys.PERMIT.PROCESSED
+  ] = await contract_reader.isPermitProcessed(permitId)
+
+  convertedJson[
+    xmlPropertyKeys.PERMIT.ACCEPTED
+  ] = await contract_reader.isPermitAccepted(permitId)
+
+  // Specimens
+  convertedJson[xmlPropertyKeys.PERMIT.SPECIMENS] = {}
+  convertedJson[xmlPropertyKeys.PERMIT.SPECIMENS][
+    xmlPropertyKeys.SPECIMEN.BASE
+  ] = []
+
+  for (let i in permitObject[5]) {
+    // Get the specimen of this index by its ID, convert and add it to the list.
+    const specimenId = permitObject[5][i]
+    const specimenObject = await contract_reader.getSpecimenById(specimenId)
+    const specimen = await convertSpecimenToStandardFormat(
+      specimenId,
+      specimenObject,
+      true
+    )
+
+    convertedJson[xmlPropertyKeys.PERMIT.SPECIMENS][
+      xmlPropertyKeys.SPECIMEN.BASE
+    ].push(specimen)
+  }
+
+  // Put this into a big outer tag (do it here to save code above).
+  const standardFormat = { [xmlPropertyKeys.PERMIT.BASE]: convertedJson }
 
   // Log and return.
-  logger.info('Conversion done:' + JSON.stringify(xmlPermit))
-  return xmlPermit
+  logger.info('Conversion done:' + JSON.stringify(standardFormat))
+  return standardFormat
 }
+
+/**
+ * Convert a specimen into standard format.
+ * The specimen is defined by a given identifier and its describing object in JSON.
+ * The conversion contains a restructuring of the data to the standard format structure.
+ * For use it in a permit, the embedded flag needs to be set.
+ *
+ * @param specimenId     - identifier of the specimen to convert
+ * @param specimenObject - object of the specimen to convert
+ * @param embedded       - do not use an outer tag to embed it.
+ *
+ * @return converted specimen
+ */
+async function convertSpecimenToStandardFormat(
+  specimenId,
+  specimenObject,
+  embedded
+) {
+  logger.info('Convert a specimen to standard format with ID: ' + specimenId)
+
+  // Build a modified JSON by the original one.
+  let convertedJson = {}
+  convertedJson._attributes = { id: specimenId }
+
+  // Permit Hash & Quantity
+  convertedJson[xmlPropertyKeys.SPECIMEN.PERMIT_ID] = specimenObject[0]
+  convertedJson[xmlPropertyKeys.SPECIMEN.QUANTITY] = 1
+  // convertedJson[xmlPropertyKeys.SPECIMEN.QUANTITY] = specimenObject[1].toString
+
+  // Names & Description
+  convertedJson[xmlPropertyKeys.SPECIMEN.SCIENTIFIC_NAME] = await hex2String(
+    specimenObject[2]
+  )
+  convertedJson[xmlPropertyKeys.SPECIMEN.COMMON_NAME] = await hex2String(
+    specimenObject[3]
+  )
+  convertedJson[xmlPropertyKeys.SPECIMEN.DESCRIPTION] = await hex2String(
+    specimenObject[4]
+  )
+
+  // Origin & Re-Export Hashes
+  convertedJson[xmlPropertyKeys.SPECIMEN.ORIGIN_HASH] = await hex2String(
+    specimenObject[5]
+  )
+  convertedJson[xmlPropertyKeys.SPECIMEN.RE_EXPORT_HASH] = await hex2String(
+    specimenObject[6]
+  )
+
+  // Check if this have to be put into an outer tag.
+  let standardFormat
+
+  if (embedded) {
+    standardFormat = convertedJson
+  } else {
+    standardFormat = { [xmlPropertyKeys.PERMIT.BASE]: convertedJson }
+  }
+
+  // Log and return.
+  logger.info('Conversion done:' + JSON.stringify(standardFormat))
+  return standardFormat
+}
+
+/* PDF */
 
 /**
  * Convert a permit into a PDF.
@@ -77,8 +206,20 @@ async function convertPermitToXml(permitId, permitObject) {
  *
  * @return converted PDF
  */
-
 async function convertPermitToPdf(permitId, permitObject) {
+  throw new Error('PDF conversion is not supported so far!')
+}
+
+/**
+ * Convert a specimen into a PDF.
+ * The specimen is defined by a given identifier and its describing object in JSON.
+ *
+ * @param specimenId    - identifier of the specimen to convert
+ * @param specimenObjec - object of the specimen to convert
+ *
+ * @return converted PDF
+ */
+async function convertSpecimenToPdf(specimenId, specimenbject) {
   throw new Error('PDF conversion is not supported so far!')
 }
 
@@ -88,14 +229,34 @@ const convertPermit = async function(permitId, permitObject, type) {
   // Choose the correct conversion function by the type.
   switch (type) {
     case conversion_types.XML:
-      return convertPermitToXml(permitId, permitObject)
+      const standardFormat = await convertPermitToStandardFormat(
+        permitId,
+        permitObject
+      )
+      return xml.json2xml(standardFormat, general_prop.xmlConverterConfig)
 
     case conversion_types.PDF:
       return convertPermitToPdf(permitId, permitObject)
   }
 }
 
+const convertSpecimen = async function(specimenId, specimenObject) {
+  // Choose the correct conversion function by the type.
+  switch (type) {
+    case conversion_types.XML:
+      const standardFormat = await convertSpecimenToStandardFormat(
+        specimenId,
+        specimenObject
+      )
+      return xml.json2xml(standardFormat, general_prop.xmlConverterConfig)
+
+    case conversion_types.PDF:
+      return convertSpecimenToPdf(specimenId, specimenObject)
+  }
+}
+
 // Define what to export.
 module.exports = {
-  convertPermit: convertPermit
+  convertPermit: convertPermit,
+  convertSpecimen: convertSpecimen
 }
