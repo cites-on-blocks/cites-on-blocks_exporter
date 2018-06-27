@@ -6,7 +6,6 @@ const fs = require('fs') // To read cached permit files.
 // Own
 const logger = require(__dirname + '/../logger.js').logger // To log information persistently.
 const routeNames = require(__dirname + '/../constants/routeNames.js') // The names of the routes of this router as enumeration.
-const routePaths = require(__dirname + '/../constants/routePaths.js') // The paths of the routes of this router.
 const arguments = require(__dirname + '/../constants/arguments.js') // The argument identifier used for the routes in this router.
 const contractReader = require(__dirname + '/../utils/contract_reader.js') // To read data on the blockchain.
 const converter = require(__dirname + '/../utils/converter.js') // To convert blockchain data to XML representational strings.
@@ -23,184 +22,127 @@ exportRouter.prefix('/api')
 /* Define Parameters */
 
 /**
- * Validate the argument for the permit ID.
- * Check if a permit with this ID exist on the blockchain.
- * If so check if a XML for this permit has been already generated and attach
- * it.
+ * Check the argument for the blockchain object type.
+ * Make sure only supported objects can be requested.
  *
  * @codes
- *  404 - Permit with this ID does not exist on the blockchain
+ *  400 - Blockchain object type is not supported
  */
-exportRouter.param(arguments.PERMIT_ID, async (id, ctx, next) => {
-  logger.info('URL parameter validation for parameter _permitId_.')
-  logger.info('Verify the ID: ' + id)
-
-  // Try to get the permit from the blockchain.
-  ctx.permit = {}
-  ctx.permit.json = await contractReader.getPermitById(id)
-
-  // Check if the permit has been found or not.
-  // The permit identifier exists, if an object as permit exists.
-  if (ctx.permit.json) {
-    // Try to get already converted permit files which has get cached.
-    ctx.permit.cache = await cacheHandler.getObject(
-      blockchainObjects.PERMIT,
-      id
-    )
-    return next()
-  } else {
-    const message = 'The given permit ID (' + id + ') does not exist!'
-    logger.info(message)
-    ctx.body = message
-    ctx.status = 404
-  }
-})
-
-/**
- * Validate the argument for the specimen ID.
- * Check if a specimen with this ID exist on the blockchain.
- * If so check if a XML for this permit has been already generated and attach
- * it.
- *
- * @codes
- *  404 - Specimen with this ID does not exist on the blockchain
- */
-exportRouter.param(arguments.SPECIMEN_ID, async (id, ctx, next) => {
-  logger.info('URL parameter validation for parameter _specimenId_.')
-  logger.info('Verify the ID: ' + id)
-
-  // Try to get the specimen from the blockchain.
-  ctx.specimen = {}
-  ctx.specimen.json = await contractReader.getSpecimenById(id)
-
-  // Check if the specimen has been found or not.
-  // The specimen identifier exists, if an object as permit exists.
-  if (ctx.specimen.json) {
-    // Try to get already converted permit files which has get cached.
-    ctx.specimen.cache = await cacheHandler.getObject(
-      blockchainObjects.SPECIMEN,
-      id
-    )
-    return next()
-  } else {
-    const message = 'The given specimen ID (' + id + ') does not exist!'
-    logger.info(message)
-    ctx.body = message
-    ctx.status = 404
-  }
-})
-
-/* Define Methods */
-
-/**
- * Router function to export an permit as XML file.
- * Expect the permits ID as path argument.
- * In case no XML file already exist, it generates one and respond it.
- *
- * @codes
- *  200 - Permit XML already exist and gets responded
- *  201 - Permit XML has been generated and responded
- */
-exportRouter.get(
-  routeNames.PERMIT_XML_EXPORT,
-  routePaths.PERMIT_XML_EXPORT + '/:' + arguments.PERMIT_ID,
-  async (ctx, next) => {
-    logger.info('Export an permit as XML.')
-    const responseType = 'text/xml'
-
-    // Check if the permit does already exist for the conversion type.
-    // This could has been added by the parameter check function.
-    if (
-      ctx.permit &&
-      ctx.permit.cache &&
-      ctx.permit.cache[conversion_types.XML]
-    ) {
-      // Read the cached file.
-      logger.info('Load already converted file from the cache.')
-      ctx.body = fs.readFileSync(ctx.permit.cache[conversion_types.XML])
-      ctx.type = responseType
-      ctx.status = 200
-    } else if (ctx.permit && ctx.permit.json) {
-      // Convert permit to XML and cache it afterwards.
-      logger.info('Must do a new conversion of this permit.')
-      const permitId = ctx.params[arguments.PERMIT_ID]
-      const xml = await converter.convertPermit(
-        permitId,
-        ctx.permit.json,
-        conversion_types.XML
-      )
-      cacheHandler.cacheObject(
-        blockchainObjects.PERMIT,
-        permitId,
-        xml,
-        conversion_types.XML
-      ) // Don't wait for it until response.
-
-      // Define the response.
-      ctx.body = xml
-      ctx.type = responseType
-      ctx.status = 200
-    } else {
-      logger.info(
-        'The context property for the permit does not exist! Must response server internal error code.'
-      )
-      ctx.status = 500
+exportRouter.param(
+  arguments.BLOCKCHAIN_OBJECT_TYPE,
+  async (object, ctx, next) => {
+    // Check for each of known object type if it fits.
+    for (let i in blockchainObjects) {
+      if (blockchainObjects[i] === object) {
+        // Everything fine, so so further.
+        logger.info('Requested valid blockchain type: ' + object)
+        return next()
+      }
     }
+
+    // Provided blockchain object type is not supported.
+    const message =
+      'The requested blockchain object type (' + object + ') is not supported!'
+    logger.info(message)
+    ctx.body = message
+    ctx.status = 400
   }
 )
 
 /**
- * Router function to export a specimen as XML file.
- * Expect the specimens ID as path argument.
- * In case no XML file already exist, it generates one and respond it.
+ * Validate the argument for the object identifier.
+ * Check if a object with this identifier exist on the blockchain.
+ * If so check if converted file for this object has been already generated
+ * and attach it for the next middleware functions.
  *
  * @codes
- *  200 - Specimen XML already exist and gets responded
- *  201 - Specimen XML has been generated and responded
+ *  404 - Object with this identifier does not exist on the blockchain
+ */
+exportRouter.param(
+  arguments.OBJECT_IDENTIFIER,
+  async (identifier, ctx, next) => {
+    // Store this parameter here, cause we will need it a lot.
+    const object = ctx.params[arguments.BLOCKCHAIN_OBJECT_TYPE]
+
+    logger.info('URL parameter validation for object identifier.')
+    logger.info('Verify the identifier: ' + identifier + ' for a ' + object)
+
+    // Try to get the object from the blockchain.
+    ctx[object] = {}
+    ctx[object].json = await contractReader.getObjectById(object, identifier)
+
+    // Check if the object has been found or not.
+    // The object exists if some content has been found on the blockchain.
+    if (ctx[object].json) {
+      // Try to get already converted object files which has get cached.
+      ctx[object].cache = await cacheHandler.getObject(object, identifier)
+      return next()
+    } else {
+      const message =
+        'The given identifier (' +
+        identifier +
+        ') does not exist for a ' +
+        object +
+        '!'
+      logger.info(message)
+      ctx.body = message
+      ctx.status = 404
+    }
+  }
+)
+
+/* Define Methods */
+
+/**
+ * Router function to export convert an object from the blockchain.
+ * Expect the blockchain object type and its identifier as path argument.
+ * In case no conversion file already exist, it generates one and respond it.
+ *
+ * @codes
+ *  200 - Object conversion file already exist and gets responded
+ *  201 - Object has exported and converted new before responded
  */
 exportRouter.get(
-  routeNames.SPECIMEN_XML_EXPORT,
-  routePaths.SPECIMEN_XML_EXPORT + '/:' + arguments.SPECIMEN_ID,
+  routeNames.BLOCKCHAIN_OBJECT_EXPORT,
+  '/:' + arguments.BLOCKCHAIN_OBJECT_TYPE + '/:' + arguments.OBJECT_IDENTIFIER,
   async (ctx, next) => {
-    logger.info('Export an specimen as XML.')
+    logger.info('Export and convert an blockchain object.')
+
+    // Store these parameter here, cause we will need it a lot.
+    const object = ctx.params[arguments.BLOCKCHAIN_OBJECT_TYPE]
+    const identifier = ctx.params[arguments.BLOCKCHAIN_OBJECT_TYPE]
     const responseType = 'text/xml'
 
-    // Check if the specimen does already exist for the conversion type.
-    // This could has been added by the parameter check function.
+    // Check if the object has been converted for this conversion type already.
+    // This has been checked by the parameter checked and added if so.
     if (
-      ctx.specimen &&
-      ctx.specimen.cache &&
-      ctx.specimen.cache[conversion_types.XML]
+      ctx[object] &&
+      ctx[object].cache &&
+      ctx[object].cache[conversion_types.XML]
     ) {
       // Read the cached file.
       logger.info('Load already converted file from the cache.')
-      console.log(ctx.specimen.cache[conversion_types.XML])
-      ctx.body = fs.readFileSync(ctx.specimen.cache[conversion_types.XML])
+      ctx.body = fs.readFileSync(ctx[object].cache[conversion_types.XML])
       ctx.type = responseType
       ctx.status = 200
-    } else if (ctx.specimen && ctx.specimen.json) {
-      // Convert specimen to XML and cache it afterwards.
-      logger.info('Must do a new conversion of this specimen.')
-      const specimenId = ctx.params[arguments.SPECIMEN_ID]
-      const xml = await converter.convertSpecimen(
-        specimenId,
-        ctx.specimen.json,
+    } else if (ctx[object] && ctx[object].json) {
+      // Convert object to the requested type and cache it afterwards.
+      logger.info('Must do a new conversion of this object.')
+      const conversion = await converter.convertObject(
+        object,
+        identifier,
+        ctx[object].json,
         conversion_types.XML
       )
-      cacheHandler.cacheObject(
-        blockchainObjects.SPECIMEN,
-        specimenId,
-        xml,
-        conversion_types.XML
-      ) // Don't wait for it until response.
+      cacheHandler.cacheObject(object, identifier, xml, conversion_types.XML) // Don't wait for it until response.
 
       // Define the response.
-      ctx.body = xml
+      ctx.body = conversion
       ctx.type = responseType
       ctx.status = 200
     } else {
       logger.info(
-        'The context property for the specimen does not exist! Must response server internal error code.'
+        'The context property for the object does not exist! Must response server internal error code.'
       )
       ctx.status = 500
     }

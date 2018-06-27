@@ -6,6 +6,8 @@ const Web3 = require('web3')
 const logger = require(__dirname + '/../logger.js').logger
 const contractNames = require(__dirname + '/../constants/contractNames.js')
 const contract_prop = require(__dirname + '/../config/contract_prop.js')
+const blockchainObjects = require(__dirname +
+  '/../constants/blockchainObjects.js')
 const general_prop = require(__dirname + '/../config/general_prop.js')(
   process.env.NODE_ENV
 )
@@ -23,45 +25,38 @@ permitFactoryContract = permitFactoryContract.at(permitFactoryInfo.address)
 /* Functions */
 
 /**
- * Search for a permit defined by its given identifier in the contract.
- * If the specified permit does exist, it returns the whole permit object.
- * Else 'undefined' is the response.
+ * Search for an object defined by its given identifier on the blockchain.
+ * If the specified object does exist, it returns the whole response.
+ * Else 'undefined' is returned.
  *
- * @param   permitId - string as the identifier of the permit
- * @return  permit   - object as the permit itself or 'undefined'
+ * @param oject      - type of the blockchain object
+ * @param identifier - identifier of the object
+ *
+ * @return content of the object on the blockchain
  */
-const getPermitById = async permitId => {
-  logger.info('Search for permit with ID: ' + permitId)
+const getObjectById = async (object, identifier) => {
+  logger.info('Search for ' + object + ' with identifier: ' + identifier)
 
-  // Try to get the permit from the contract.
-  try {
-    const permit = await permitFactoryContract.getPermit(permitId)
-    logger.info('Permit could been found for this ID.')
-    return permit
-  } catch (err) {
-    logger.info('No permit could been found for this ID!')
-    return undefined
+  // Choose the correct function to access the object on the blockchain.
+  let getter
+
+  switch (object) {
+    case blockchainObjects.PERMIT:
+      getter = permitFactoryContract.getPermit
+      break
+
+    case blockchainObjects.SPECIMEN:
+      getter = permitFactoryContract.getSpecimen
+      break
   }
-}
 
-/**
- * Search for a specimen defined by its given identifier in the contract.
- * If the specified specimen does exist, it returns the whole specimen object.
- * Else 'undefined' is the response.
- *
- * @param   specimenId - string as the identifier of the specimen
- * @return  specimen   - object as the specimen itself or 'undefined'
- */
-const getSpecimenById = async specimenId => {
-  logger.info('Search for specimen with ID: ' + specimenId)
-
-  // Try to get the specimen from the contract.
+  // Try to get the object from the blockchain.
   try {
-    const specimen = await permitFactoryContract.getSpecimen(specimenId)
-    logger.info('Specimen could been found for this ID.')
-    return specimen
+    const content = await getter.call(identifier)
+    logger.info('The ' + object + ' could been found for this identifier.')
+    return content
   } catch (err) {
-    logger.info('No specimen could been found for this ID!')
+    logger.info('No ' + object + ' could been found for this identifier!')
     return undefined
   }
 }
@@ -110,8 +105,7 @@ const isPermitAccepted = async permitId => {
 
 // Define what will be exported.
 module.exports = {
-  getPermitById: getPermitById,
-  getSpecimenById: getSpecimenById,
+  getObjectById: getObjectById,
   isPermitProcessed: isPermitProcessed,
   isPermitAccepted: isPermitAccepted
 }

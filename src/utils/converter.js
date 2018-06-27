@@ -11,6 +11,8 @@ const conversion_types = require(__dirname +
   '/../constants/conversion_types.js') // To specify to what type to convert.
 const xmlPropertyKeys = require(__dirname + '/../constants/xmlPropertyKeys.js')
 const contract_reader = require(__dirname + '/contract_reader.js')
+const blockchainObjects = require(__dirname +
+  '/../constants/blockchainObjects.js')
 
 /* Utilities */
 
@@ -111,7 +113,10 @@ async function restructurePermitToStandardFormat(permitId, permitObject) {
   for (let i in permitObject[5]) {
     // Get the specimen of this index by its ID, convert and add it to the list.
     const specimenId = permitObject[5][i]
-    const specimenObject = await contract_reader.getSpecimenById(specimenId)
+    const specimenObject = await contract_reader.getObjectById(
+      blockchainObject.SPECIMEN,
+      specimenId
+    )
     const specimen = await restructureSpecimenToStandardFormat(
       specimenId,
       specimenObject,
@@ -197,25 +202,36 @@ async function restructureSpecimenToStandardFormat(
 /* Functions */
 
 /**
- * Convert a permit into a specified file type.
- * The permit is defined by its identifier and object.
- * Before the permit gets converted to the requested file type,
- * it get restructured from blockchain into standard format.
+ * Convert an blockchain object into a specified file type.
+ * The object is defined by its identifier and object.
+ * Before the obkect gets converted to the requested file type,
+ * it gets restructured from blockchain into standard format.
  *
- * @param permitId      - identifier of the permit to convert
- * @param permitObject  - oject of the permit to convert
- * @param type          - file type for convert into
+ * @param object        - type of the blockchain object
+ * @param identifier    - identifier of the object
+ * @param content       - content of the object
+ * @param conversion    - file type for the conversion
  *
- * @return converted permit
+ * @return converted object
  */
-const convertPermit = async function(permitId, permitObject, type) {
-  // Choose the correct conversion function by the type.
+const convertObject = async function(object, identifier, content, conversion) {
+  // Choose the restructuring function for the object type.
+  let restucturer
+
+  switch (object) {
+    case blockchainObjects.PERMIT:
+      restucturer = restructurePermitToStandardFormat
+      break
+
+    case blockchainObjects.SPECIMEN:
+      restucturer = restructureSpecimenToStandardFormat
+      break
+  }
+
+  // Choose the conversion function by the conversion typpe.
   switch (type) {
     case conversion_types.XML:
-      const standardFormat = await restructurePermitToStandardFormat(
-        permitId,
-        permitObject
-      )
+      const standardFormat = await restucturer(permitId, permitObject)
       return xml.json2xml(standardFormat, general_prop.xmlConverterConfig)
 
     case conversion_types.PDF:
@@ -223,35 +239,7 @@ const convertPermit = async function(permitId, permitObject, type) {
   }
 }
 
-/**
- * Convert a specimen into a specified file type.
- * The specimen is defined by its identifier and object.
- * Before the specimen gets converted to the requested file type,
- * it get restructured from blockchain into standard format.
- *
- * @param specimenId      - identifier of the specimen to convert
- * @param specimenObject  - oject of the specimen to convert
- * @param type            - file type for convert into
- *
- * @return converted specimen
- */
-const convertSpecimen = async function(specimenId, specimenObject, type) {
-  // Choose the correct conversion function by the type.
-  switch (type) {
-    case conversion_types.XML:
-      const standardFormat = await restructureSpecimenToStandardFormat(
-        specimenId,
-        specimenObject
-      )
-      return xml.json2xml(standardFormat, general_prop.xmlConverterConfig)
-
-    case conversion_types.PDF:
-      return convertPermitToPdf(permitId, permitObject)
-  }
-}
-
 // Define what to export.
 module.exports = {
-  convertPermit: convertPermit,
-  convertSpecimen: convertSpecimen
+  convertObject: convertObject
 }
