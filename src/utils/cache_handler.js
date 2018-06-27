@@ -56,6 +56,7 @@ const getPermit = async permitId => {
     // Get the path where to search for the permit.
     const type = conversion_types[i]
     const path = await getPath(permitId, type)
+    logger.info('File: ' + path)
 
     // Check if the file exist.
     if (fs.existsSync(path)) {
