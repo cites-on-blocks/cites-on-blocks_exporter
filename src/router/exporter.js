@@ -96,11 +96,14 @@ exportRouter.param(
 /**
  * Router function to export convert an object from the blockchain.
  * Expect the blockchain object type and its identifier as path argument.
+ * The conversion type can be specified by the query parameter 'conversion'.
+ * If none is given, XML is used per default.
  * In case no conversion file already exist, it generates one and respond it.
  *
  * @codes
  *  200 - Object conversion file already exist and gets responded
  *  201 - Object has exported and converted new before responded
+ *  400 - If the defined conversion type is not supported
  */
 exportRouter.get(
   routeNames.BLOCKCHAIN_OBJECT_EXPORT,
@@ -113,38 +116,76 @@ exportRouter.get(
     const identifier = ctx.params[arguments.BLOCKCHAIN_OBJECT_TYPE]
     const responseType = 'text/xml'
 
+    // Define the conversion file type by query parameter or fallback.
+    const conversion = ctx.request.query[arguments.CONVERSION_TYPE]
+
+    if (conversion) {
+      // Check if the defined type is a supported one.
+      let valid = false
+
+      for (let i in conversion_types) {
+        // Check if this type fits, if no type has fit before.
+        if (!valid && conversion_types[i] === conversion) {
+          valid = true
+        }
+      }
+
+      // End here with an error response if not have a valid type.
+      if (!valid) {
+        const message =
+          'The defined conversion type (' + conversion + ') is not supported!'
+        logger.info(message)
+        ctx.body = message
+        ctx.status = 400
+        return next()
+      }
+    } else {
+      // Fall back to default.
+      conversion = conversion_types.XML
+    }
+
     // Check if the object has been converted for this conversion type already.
     // This has been checked by the parameter checked and added if so.
-    if (
-      ctx[object] &&
-      ctx[object].cache &&
-      ctx[object].cache[conversion_types.XML]
-    ) {
+    if (ctx[object] && ctx[object].cache && ctx[object].cache[conversion]) {
       // Read the cached file.
       logger.info('Load already converted file from the cache.')
-      ctx.body = fs.readFileSync(ctx[object].cache[conversion_types.XML])
+      ctx.body = fs.readFileSync(ctx[object].cache[conversion])
       ctx.type = responseType
       ctx.status = 200
+      return next()
     } else if (ctx[object] && ctx[object].json) {
       // Convert object to the requested type and cache it afterwards.
       logger.info('Must do a new conversion of this object.')
-      const conversion = await converter.convertObject(
-        object,
-        identifier,
-        ctx[object].json,
-        conversion_types.XML
-      )
-      cacheHandler.cacheObject(object, identifier, xml, conversion_types.XML) // Don't wait for it until response.
+      try {
+        const convertedContent = await converter.convertObject(
+          object,
+          identifier,
+          ctx[object].json,
+          conversion
+        )
+        cacheHandler.cacheObject(
+          object,
+          identifier,
+          convertedContent,
+          conversion
+        ) // Don't wait for it until response.
 
-      // Define the response.
-      ctx.body = conversion
-      ctx.type = responseType
-      ctx.status = 200
+        // Define the response.
+        ctx.body = convertedContent
+        ctx.type = responseType
+        ctx.status = 200
+      } catch (err) {
+        // Internal error occurred while conversion or caching.
+        logger.info(err)
+        ctx.status = 500
+        return next()
+      }
     } else {
       logger.info(
         'The context property for the object does not exist! Must response server internal error code.'
       )
       ctx.status = 500
+      return next()
     }
   }
 )

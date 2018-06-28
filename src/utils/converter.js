@@ -229,9 +229,9 @@ const convertObject = async function(object, identifier, content, conversion) {
   }
 
   // Choose the conversion function by the conversion typpe.
-  switch (type) {
+  switch (conversion) {
     case conversion_types.XML:
-      const standardFormat = await restucturer(permitId, permitObject)
+      const standardFormat = await restucturer(identifier, content)
       return xml.json2xml(standardFormat, general_prop.xmlConverterConfig)
 
     case conversion_types.PDF:
