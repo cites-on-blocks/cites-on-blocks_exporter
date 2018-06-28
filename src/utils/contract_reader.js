@@ -74,7 +74,7 @@ const isPermitProcessed = async permitId => {
   // Try to get the processed flag from the contract for this permit.
   try {
     const processed = await permitFactoryContract.confirmed(permitId)
-    logger.info('Permit processed flag has been returned.')
+    logger.info('Permit processed flag has been returned: ' + processed)
     return processed
   } catch (err) {
     logger.info('No processed flag could been found!')

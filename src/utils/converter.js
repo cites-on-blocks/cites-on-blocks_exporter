@@ -49,7 +49,9 @@ async function hex2String(hex) {
  * @return restructured permit
  */
 async function restructurePermitToStandardFormat(permitId, permitObject) {
-  logger.info('Restructure a permit to standard format with ID: ' + permitId)
+  logger.info(
+    'Restructure a permit to standard format with identifier: ' + permitId
+  )
 
   // Build a modified JSON by the original one.
   let restructuredPermit = {}
@@ -114,7 +116,7 @@ async function restructurePermitToStandardFormat(permitId, permitObject) {
     // Get the specimen of this index by its ID, convert and add it to the list.
     const specimenId = permitObject[5][i]
     const specimenObject = await contract_reader.getObjectById(
-      blockchainObject.SPECIMEN,
+      blockchainObjects.SPECIMEN,
       specimenId
     )
     const specimen = await restructureSpecimenToStandardFormat(

@@ -10,8 +10,9 @@ const general_prop = require(__dirname + '/../config/general_prop.js')(
 ) // To get the configured cache folder.
 const conversion_types = require(__dirname +
   '/../constants/conversion_types.js') // The list of types a permit can get converted to.
-const blockchainObject = require(__dirname +
+const blockchainObjects = require(__dirname +
   '/../constants/blockchainObjects.js') // Split the cache for each object.
+const contractReader = require(__dirname + '/contract_reader.js') // To catch information from the blockchain.
 
 /* Properties */
 
@@ -111,6 +112,8 @@ const getObject = async (object, identifier) => {
 /**
  * Cache the object for a specific conversion type.
  * Can be retrieved again by the get function.
+ * If the blockchain object type should be a PERMIT, this object must have set the processed flag on the
+ * blockchain, else it will not be cached, cause its content can change over time.
  * The content parameter must have the correct JS type for the specified
  * conversion type.
  * Cause this function is meant to be not waiting for, an exception doesn't
@@ -134,6 +137,24 @@ const cacheObject = async (object, identifier, content, conversion) => {
       ' for conversion type ' +
       conversion
   )
+
+  // For permits, check if the processed flag is set.
+  if (object === blockchainObjects.PERMIT) {
+    logger.info(
+      'Check if this permit has set the processed flag. Else it is not stable and can not be cached.'
+    )
+
+    // Read from the blockchain if the permit processed.
+    const processed = await contractReader.isPermitProcessed(identifier)
+
+    if (!processed) {
+      logger.info('The permit is not processed so far and will not be cached.')
+      return false
+    } else {
+      logger.info('The permit is processed and can be cached.')
+    }
+  }
+
   // Get the path where to store the file.
   const pathToStore = await getPath(object, identifier, conversion)
 

@@ -113,11 +113,11 @@ exportRouter.get(
 
     // Store these parameter here, cause we will need it a lot.
     const object = ctx.params[arguments.BLOCKCHAIN_OBJECT_TYPE]
-    const identifier = ctx.params[arguments.BLOCKCHAIN_OBJECT_TYPE]
+    const identifier = ctx.params[arguments.OBJECT_IDENTIFIER]
     const responseType = 'text/xml'
 
     // Define the conversion file type by query parameter or fallback.
-    const conversion = ctx.request.query[arguments.CONVERSION_TYPE]
+    let conversion = ctx.request.query[arguments.CONVERSION_TYPE]
 
     if (conversion) {
       // Check if the defined type is a supported one.
@@ -163,6 +163,7 @@ exportRouter.get(
           ctx[object].json,
           conversion
         )
+
         cacheHandler.cacheObject(
           object,
           identifier,
@@ -171,6 +172,7 @@ exportRouter.get(
         ) // Don't wait for it until response.
 
         // Define the response.
+        logger.info('Reponse with the new converted content of the object.')
         ctx.body = convertedContent
         ctx.type = responseType
         ctx.status = 200
