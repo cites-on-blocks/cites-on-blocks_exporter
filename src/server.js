@@ -5,6 +5,7 @@ const http = require('http') // To receive and send HTTP messages.
 const https = require('https') // For TLS encryption.
 const sslify = require('koa-sslify') // Force HTTPS connections.
 const logger_bunyan = require('koa-bunyan-logger') // To log connections and other content.
+const cors = require('@koa/cors') // To allow cross origin requests in the development mode.
 
 // Own
 const bootstrap = require(__dirname + '/bootstrap.js') // Utility functions to bootstrap the server.
@@ -22,6 +23,11 @@ const ssl_prop = require(__dirname + '/config/ssl_prop.js')
 
 /* Middleware */
 // The order of the different middle ware components is absolutely important!
+
+if (app.env === 'development') {
+  console.log('Enable COR for development usage.')
+  app.use(cors())
+}
 
 // Add logger for the connections.
 bootstrap.initLogging()
