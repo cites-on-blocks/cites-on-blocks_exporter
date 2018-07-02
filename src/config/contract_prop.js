@@ -33,7 +33,7 @@ function readContractFile(name, parse = false) {
   if (!fs.existsSync(path)) {
     const message =
       'Could not find the following file, cause it does not exist: ' + path
-    logger.err(message)
+    logger.info(message)
     throw new Error(message)
   }
 
@@ -47,7 +47,7 @@ function readContractFile(name, parse = false) {
       path +
       '\n' +
       JSON.stringify(err)
-    logger.err(message)
+    logger.info(message)
     throw new Error(message)
   }
 }
