@@ -158,6 +158,7 @@ ganache.on('exit', function (code) {
         process.kill(process.pid);
       });
     }
+    process.kill(process.pid);
   })
   
 });
