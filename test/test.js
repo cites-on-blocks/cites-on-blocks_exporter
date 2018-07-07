@@ -3,6 +3,7 @@ let assert = require('assert');
 const PERMIT_INFO = require('./constants/permit.js');
 const fixString = require('./utils/hexStringFixer.js');
 let CounterObject = require('./utils/counterObject.js');
+const BC_OBJECTS = require('../src/constants/blockchainObjects.js');
 const fs = require('fs');
 const https = require('https'); //import { parseString } from 'xml2js' doesn't work for some reason
 const parseString = require('xml2js').parseString
@@ -28,7 +29,7 @@ describe('Optimal - Persons', function() {
   before(function() {
     return new Promise((resolve) => {
       permitHash = fs.readFileSync('./test/hashes/Permithash.hash').toString('utf-8');
-      requestPath = 'https://localhost:8081/api/permit/' + permitHash;
+      requestPath = 'https://localhost:8081/api/' + BC_OBJECTS.PERMIT +'/' + permitHash;
       request({
         url: requestPath,
         method: 'GET',
