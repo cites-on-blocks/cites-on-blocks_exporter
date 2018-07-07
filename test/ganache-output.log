@@ -1,0 +1,20 @@
+Ganache CLI v6.1.0 (ganache-core: 2.1.0)
+Error: listen EADDRINUSE :::8545
+    at Object._errnoException (util.js:992:11)
+    at _exceptionWithHostPort (util.js:1014:20)
+    at Server.setupListenHandle [as _listen2] (net.js:1355:14)
+    at listenInCluster (net.js:1396:12)
+    at Server.listen (net.js:1480:7)
+    at Server.i.listen (/usr/lib/node_modules/ganache-cli/build/cli.node.js:2:726559)
+    at Object.<anonymous> (/usr/lib/node_modules/ganache-cli/build/cli.node.js:2:4348562)
+    at a (/usr/lib/node_modules/ganache-cli/build/cli.node.js:2:110)
+    at /usr/lib/node_modules/ganache-cli/build/cli.node.js:2:524
+    at Object.<anonymous> (/usr/lib/node_modules/ganache-cli/build/cli.node.js:2:536)
+    at Module._compile (module.js:652:30)
+    at Object.Module._extensions..js (module.js:663:10)
+    at Module.load (module.js:565:32)
+    at tryModuleLoad (module.js:505:12)
+    at Function.Module._load (module.js:497:3)
+    at Function.Module.runMain (module.js:693:10)
+    at startup (bootstrap_node.js:191:16)
+    at bootstrap_node.js:612:3
