@@ -73,29 +73,29 @@ async function restructurePermitToStandardFormat(permitId, permitObject) {
   restructuredPermit[xmlPropertyKeys.PERMIT.IMPORTER] = {}
   restructuredPermit[xmlPropertyKeys.PERMIT.IMPORTER][
     xmlPropertyKeys.PARTICIPANT.NAME
-  ] = await hex2String(permitObject[3][0])
+  ] = await hex2String(permitObject[4][0])
 
   restructuredPermit[xmlPropertyKeys.PERMIT.IMPORTER][
     xmlPropertyKeys.PARTICIPANT.STREET
-  ] = await hex2String(permitObject[3][1])
+  ] = await hex2String(permitObject[4][1])
 
   restructuredPermit[xmlPropertyKeys.PERMIT.IMPORTER][
     xmlPropertyKeys.PARTICIPANT.CITY
-  ] = await hex2String(permitObject[3][2])
+  ] = await hex2String(permitObject[4][2])
 
   // Exporter
   restructuredPermit[xmlPropertyKeys.PERMIT.EXPORTER] = {}
   restructuredPermit[xmlPropertyKeys.PERMIT.EXPORTER][
     xmlPropertyKeys.PARTICIPANT.NAME
-  ] = await hex2String(permitObject[4][0])
+  ] = await hex2String(permitObject[3][0])
 
   restructuredPermit[xmlPropertyKeys.PERMIT.EXPORTER][
     xmlPropertyKeys.PARTICIPANT.STREET
-  ] = await hex2String(permitObject[4][1])
+  ] = await hex2String(permitObject[3][1])
 
   restructuredPermit[xmlPropertyKeys.PERMIT.EXPORTER][
     xmlPropertyKeys.PARTICIPANT.CITY
-  ] = await hex2String(permitObject[4][2])
+  ] = await hex2String(permitObject[3][2])
 
   // Processed & Accepted Flags
   restructuredPermit[
