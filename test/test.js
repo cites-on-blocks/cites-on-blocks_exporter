@@ -1,29 +1,29 @@
 const { exec } = require('child_process');
-var assert = require('assert');
+let assert = require('assert');
 const PERMIT_INFO = require('./constants/permit.js');
 const fixString = require('./utils/hexStringFixer.js');
 let CounterObject = require('./utils/counterObject.js');
 const fs = require('fs');
 const https = require('https'); //import { parseString } from 'xml2js' doesn't work for some reason
 const parseString = require('xml2js').parseString
-var convert = require('xml-js');
-var request = require('request');
+let convert = require('xml-js');
+let request = require('request');
 
-var agentOptions = {
+let agentOptions = {
   host: 'localhost',
   port: '8081',
   path: '/',
   rejectUnauthorized: false
 };
 
-var agent = new https.Agent(agentOptions);
+let agent = new https.Agent(agentOptions);
 
 describe('Optimal - Persons', function() {
 
   let permit = undefined
 
-  var permitHash = '';
-  var requestPath = '';
+  let permitHash = '';
+  let requestPath = '';
 
   before(function() {
     return new Promise((resolve) => {

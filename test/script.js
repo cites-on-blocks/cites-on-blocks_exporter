@@ -4,16 +4,16 @@ const PERMIT_INFO = require('./constants/permit.js')
 const { spawn } = require('child_process');
 const { exec } = require('child_process');
 let DAPP_PATH = '../../cites-on-blocks_dapp/';
-var fs = require('fs');
+let fs = require('fs');
 
-var web3 = undefined;
-var permitFactoryContract = undefined;
+let web3 = undefined;
+let permitFactoryContract = undefined;
 
-var contractAddress = ''
-var abi = {};
-var fullOut = '';
-var addresses = [];
-var permitHash = undefined;
+let contractAddress = ''
+let abi = {};
+let fullOut = '';
+let addresses = [];
+let permitHash = undefined;
 
 if (process.argv[2]!==undefined) {
   if(fs.lstatSync(process.argv[2]).isDirectory()){
@@ -32,7 +32,7 @@ const truffle = exec ('truffle migrate', {cwd: DAPP_PATH},(error, stdout, stderr
 	contractAddress = contractAddress.substring(15);
   fs.createWriteStream('../data/PermitFactory.address').write(contractAddress);
 	console.log('contract address fetched')
-	var pipeStream = fs.createReadStream(DAPP_PATH+'build/contracts/PermitFactory.json')
+	let pipeStream = fs.createReadStream(DAPP_PATH+'build/contracts/PermitFactory.json')
 	  .pipe(fs.createWriteStream('../data/PermitFactory.json'));
 	pipeStream.on('finish', () => {
 		console.log('getting contracts\'s abi...')
@@ -81,6 +81,7 @@ function runTests() {
   });
   exporter.on('exit', function (code) {
     console.log('stopped exporter');
+    ganache.kill('SIGINT');
   });
   exporter.stderr.on('data', function(err) {
     console.log(err.toString());
@@ -93,7 +94,6 @@ function runTests() {
     }
     //somehow kill doesn't work for the exporter
     const killExporter = exec ('kill ' + exporter.pid)
-    ganache.kill('SIGINT')
   });
   
 }
@@ -150,4 +150,14 @@ ganache.stderr.on('data', function (data) {
 
 ganache.on('exit', function (code) {
   console.log('stopped gnache');
+
+  const findProcessOnPort = exec ('lsof -i tcp:8080', (error, stdout, stderr) => {
+    let pid = stdout.toString().match(/    [0-9]{4}/)[0].trim();
+    if(pid){
+      const killProcessOnPort = exec ('kill ' + pid, (error, stdout, stderr) => {
+        process.kill(process.pid);
+      });
+    }
+  })
+  
 });
