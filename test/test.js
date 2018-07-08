@@ -45,10 +45,6 @@ describe("Optimal - Persons", function() {
           agent: agent
         },
         function(error, response, body) {
-          //console.log('error:', error)
-          //console.log('statusCode:', response && response.statusCode)
-          //let newx = convert.xml2json(body, {compact: true, spaces: 4})
-          //console.log(newx)
           if (error) {
             console.log(error)
           }
@@ -136,10 +132,6 @@ before(function() {
         agent: agent
       },
       function(error, response, body) {
-        //console.log('error:', error)
-        //console.log('statusCode:', response && response.statusCode)
-        //let newx = convert.xml2json(body, {compact: true, spaces: 4})
-        //console.log(newx)
         if (error) {
           console.log(error)
         }
