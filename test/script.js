@@ -155,7 +155,7 @@ ganache.on("exit", function(code) {
   console.log("stopped gnache")
 
   const findProcessOnPort = exec(
-    "lsof -i tcp:8080",
+    "lsof -i tcp:" + props("development").port_http,
     (error, stdout, stderr) => {
       let pid = stdout
         .toString()
