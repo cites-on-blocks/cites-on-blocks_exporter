@@ -4,6 +4,7 @@ const PERMIT_INFO = require("./constants/permit.js")
 const fixString = require("./utils/hexStringFixer.js")
 let CounterObject = require("./utils/counterObject.js")
 const BC_OBJECTS = require("../src/constants/blockchainObjects.js")
+const props = require("../src/config/general_prop.js")
 const fs = require("fs")
 const https = require("https") //import { parseString } from 'xml2js' doesn't work for some reason
 const parseString = require("xml2js").parseString
@@ -12,7 +13,7 @@ let request = require("request")
 
 let agentOptions = {
   host: "localhost",
-  port: "8081",
+  port: props("development").port_https,
   path: "/",
   rejectUnauthorized: false
 }
@@ -31,7 +32,12 @@ describe("Optimal - Persons", function() {
         .readFileSync("./test/hashes/Permithash.hash")
         .toString("utf-8")
       requestPath =
-        "https://localhost:8081/api/" + BC_OBJECTS.PERMIT + "/" + permitHash
+        "https://localhost:" +
+        props("development").port_https +
+        "/api/" +
+        BC_OBJECTS.PERMIT +
+        "/" +
+        permitHash
       request(
         {
           url: requestPath,
@@ -118,7 +124,11 @@ before(function() {
     permitHash = fs
       .readFileSync("./test/hashes/Permithash.hash")
       .toString("utf-8")
-    requestPath = "https://localhost:8081/api/permit/" + permitHash
+    requestPath =
+      "https://localhost:" +
+      props("development").port_https +
+      "/api/permit/" +
+      permitHash
     request(
       {
         url: requestPath,
@@ -234,7 +244,9 @@ describe("Unsupported conversion type", function() {
         .readFileSync("./test/hashes/Permithash.hash")
         .toString("utf-8")
       requestPath =
-        "https://localhost:8081/api/" +
+        "https://localhost:" +
+        props("development").port_https +
+        "/api/" +
         BC_OBJECTS.PERMIT +
         "/" +
         permitHash +

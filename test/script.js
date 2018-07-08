@@ -3,6 +3,7 @@ const Web3 = require("web3")
 const PERMIT_INFO = require("./constants/permit.js")
 const { spawn } = require("child_process")
 const { exec } = require("child_process")
+const props = require("../src/config/general_prop.js")
 let DAPP_PATH = "../../cites-on-blocks_dapp/"
 let fs = require("fs")
 
@@ -55,7 +56,9 @@ function getAbi() {
 
 function startWeb3() {
   console.log("starting web3...")
-  web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"))
+  web3 = new Web3(
+    new Web3.providers.HttpProvider(props("development").ethereum_provider)
+  )
   console.log("initializing contract...")
   web3.eth.defaultAccount = addresses[0]
   web3.personal.unlockAccount(web3.eth.defaultAccount)
