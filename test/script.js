@@ -152,13 +152,14 @@ ganache.on('exit', function (code) {
   console.log('stopped gnache');
 
   const findProcessOnPort = exec ('lsof -i tcp:8080', (error, stdout, stderr) => {
-    let pid = stdout.toString().match(/    [0-9]{4}/)[0].trim();
+    let pid = stdout.toString().match(/    [0-9]* /)[0].trim(); //jesus pls. this regex is horrible
     if(pid){
       const killProcessOnPort = exec ('kill ' + pid, (error, stdout, stderr) => {
         process.kill(process.pid);
       });
+    }else {
+      process.kill(process.pid);
     }
-    process.kill(process.pid);
   })
   
 });

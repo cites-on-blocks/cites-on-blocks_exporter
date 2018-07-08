@@ -118,10 +118,8 @@ before(function () {
         if (error) {
           console.log(error)
         }
-        console.log(body)
         parseString(body, (err, result) => {
           permit = result.permit;
-          console.log(permit.specimens[0].specimen)
           resolve(permit.specimens[0].specimen);
         })
       });
@@ -129,7 +127,6 @@ before(function () {
         describe('Optimal - Specimens', function () {
             let counterObject = new CounterObject(4,0);
             let count = 0;
-            console.log(specimens.length)
             specimens.forEach(function (specimen) {
                 it('Specimen ' + count + ' quantity matching', function () {
                     let quantity = specimen.quantity
@@ -157,10 +154,8 @@ before(function () {
   });
 });
 
-it('This is a required placeholder to allow before() to work', function () {
-    console.log('Mocha should not require this hack IMHO');
-});
-
+//this is needed so that the above code works
+it('', function () {});
 
 describe('Wrong identifier', function() {
     let statusCode = ''
@@ -172,7 +167,7 @@ describe('Wrong identifier', function() {
     before(function() {
       return new Promise((resolve) => {
         permitHash = 'laiewurbglaeiuh'
-        requestPath = 'https://localhost:8081/api/permit/' + permitHash;
+        requestPath = 'https://localhost:8081/api/' + BC_OBJECTS.PERMIT +'/' + permitHash;
         request({
           url: requestPath,
           method: 'GET',
@@ -191,6 +186,42 @@ describe('Wrong identifier', function() {
 
     it('message should be correct', function() {
       assert.equal(message, 'The given identifier (laiewurbglaeiuh) does not exist for a permit!');
+    });
+
+});
+
+describe('Unsupported conversion type', function() {
+    let statusCode = ''
+    let message = ''
+
+    let permitHash = '';
+    let requestPath = '';
+
+    before(function() {
+    return new Promise((resolve) => {
+      permitHash = fs.readFileSync('./test/hashes/Permithash.hash').toString('utf-8');
+      requestPath = 'https://localhost:8081/api/' + BC_OBJECTS.PERMIT +'/' + permitHash + '?conversion=yodelingmonkey';
+      request({
+        url: requestPath,
+        method: 'GET',
+        agent: agent
+      }, function (error, response, body) {
+        if (error) {
+          console.log(error)
+        }
+        statusCode = response.statusCode
+        message = body
+        resolve();
+      });
+    });
+  });
+
+    it('status code should be correct', function() {
+      assert.equal(statusCode, '400');
+    });
+
+    it('message should be correct', function() {
+      assert.equal(message, 'The defined conversion type (yodelingmonkey) is not supported!');
     });
 
 });
