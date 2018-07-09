@@ -4,3 +4,4 @@ yarn-error.log
 log/
 data/
 cache/
+test/*.log

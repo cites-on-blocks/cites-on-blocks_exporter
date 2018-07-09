@@ -5,7 +5,8 @@
   "main": "src/server.js",
   "scripts": {
     "dev": "NODE_ENV='development' node src/server.js",
-    "prd": "NODE_ENV='production' node src/server.js"
+    "prd": "NODE_ENV='production' node src/server.js",
+    "test": "mocha 'test/test.js'"
   },
   "repository": {
     "type": "git",
@@ -32,7 +33,10 @@
     "koa-bunyan-logger": "^2.0.0",
     "koa-router": "^7.4.0",
     "koa-sslify": "^2.1.2",
+    "mocha": "^5.2.0",
+    "request": "^2.87.0",
     "web3": "0.20",
-    "xml-js": "^1.6.4"
+    "xml-js": "^1.6.4",
+    "xml2js": "^0.4.19"
   }
 }
