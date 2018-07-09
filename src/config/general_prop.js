@@ -17,10 +17,11 @@ const props = {
     cacheFolder: cacheFolder
   },
 
+  // Regarding the current Azure deployment with containers.
   production: {
-    port_http: 80,
-    port_https: 443,
-    eth_provider: undefined, // TODO: Define the productive network provider.
+    port_http: 8080,
+    port_https: 8081,
+    eth_provider: 'http://localhost:8545',
     xmlConverterConfig: xmlConverterConfig,
     cacheFolder: cacheFolder
   }
