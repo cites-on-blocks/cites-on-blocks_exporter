@@ -1,0 +1,26 @@
+{
+  "extends": [
+    "eslint:recommended",
+    "plugin:promise/recommended",
+    "plugin:prettier/recommended"
+  ],
+  "plugins": [
+    "promise",
+    "prettier"
+  ],
+  "parserOptions": {
+    "ecmaVersion": 2017
+  },
+  "env": {
+    "node": true,
+    "mocha": true,
+    "es6": true
+  },
+  "globals" : {
+    "assert": false,
+    "web3": false
+  },
+  "rules": {
+    "prettier/prettier": "error"
+  }
+}
