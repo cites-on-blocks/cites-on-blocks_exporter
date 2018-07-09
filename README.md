@@ -2,6 +2,12 @@
 
 This is a server implementation to export objects from the blockchain of the distributed CITES application and convert them into different file types like XML.
 
+## API
+
+The API was defined with the OpenApi standard and can be found on
+[SwaggerHub](https://app.swaggerhub.com/apis/CITES/PermitExportService/1.2.0). Moreover the sources of the
+description has take place in this repository as well.
+
 ## Getting Started
 
 ### Installation
