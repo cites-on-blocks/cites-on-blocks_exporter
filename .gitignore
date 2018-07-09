@@ -4,4 +4,4 @@ yarn-error.log
 log/
 data/
 cache/
-test/ganache-output.log
+test/*.log
