@@ -1,30 +1,51 @@
 module.exports = Object.freeze({
   PERMIT: {
-    BASE: 'permit',
-    EXPORT_COUNTRY: 'export-country',
-    IMPORT_COUNTRY: 'import-country',
-    TYPE: 'type',
-    IMPORTER: 'importer',
-    EXPORTER: 'exporter',
+    BASE: 'CITESPermit',
     PROCESSED: 'processed',
-    ACCEPTED: 'accepted',
-    SPECIMENS: 'specimens'
+    ACCEPTED: 'accepted'
+  },
+
+  HEADER: {
+    BASE: 'HeaderExchangedDocument',
+    ID: 'ID',
+    TYPE: 'TypeCode'
+  },
+
+  CONSIGNMENT: {
+    BASE: 'SpecifiedSupplyChainConsignment',
+    SPECIMENS: 'IncludedSupplyChainConsignmentItems',
+    CONSIGNOR: 'ConsignorTradeParty',
+    CONSIGNEE: 'ConsigneeTradeParty'
   },
 
   PARTICIPANT: {
-    NAME: 'name',
-    STREET: 'street',
-    CITY: 'city'
+    ID: 'ID',
+    NAME: 'Name',
+    ADDRESS: {
+      BASE: 'PostalTradeAddress',
+      STREET: 'StreetName',
+      CITY: 'CityName',
+      COUNTRY: 'CountryID'
+    }
   },
 
   SPECIMEN: {
-    BASE: 'specimen',
-    PERMIT_ID: 'permit-id',
-    QUANTITY: 'quantity',
-    SCIENTIFIC_NAME: 'scientific-name',
-    COMMON_NAME: 'common-name',
-    DESCRIPTION: 'description',
+    BASE: 'IncludedSupplyChainConsignmentItem',
+    ID: 'ID',
     ORIGIN_HASH: 'origin-hash',
-    RE_EXPORT_HASH: 're-export-hash'
+    RE_EXPORT_HASH: 're-export-hash',
+    TRANSPORT: {
+      BASE: 'TransportLogisticsPackage',
+      QUANTITY: 'ItemQuantity'
+    },
+    ITEM: {
+      BASE: 'IncludedSupplyChainTradleLineItem',
+      PRODUCT: {
+        BASE: 'SpecifiedTradeProduct',
+        DESCRIPTION: 'Description',
+        COMMON_NAME: 'CommonName',
+        SCIENTIFIC_NAME: 'ScientificName'
+      }
+    }
   }
 })
