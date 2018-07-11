@@ -1,0 +1,7 @@
+node_modules/
+certificates/
+yarn-error.log
+log/
+data/
+cache/
+test/*.log

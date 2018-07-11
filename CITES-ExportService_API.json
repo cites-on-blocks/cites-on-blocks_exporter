@@ -1,0 +1,782 @@
+{
+  "openapi" : "3.0.0",
+  "servers" : [ {
+    "description" : "SwaggerHub API Auto Mocking",
+    "url" : "https://virtserver.swaggerhub.com/CITES/PermitExportService/1.0.0"
+  } ],
+  "info" : {
+    "title" : "CITES Export Service",
+    "version" : "1.2.0",
+    "description" : "This is the API to export blockchain objects from the distributed CITES application on Ethereum convert them to different file formats like XML.",
+    "contact" : {
+      "email" : "thore.h.weilbier@campus.tu-berlin.de"
+    },
+    "license" : {
+      "name" : "MIT",
+      "url" : "http://github.com/cites-on-blocks/cites-on-block_exporter/LICENSE"
+    }
+  },
+  "tags" : [ {
+    "name" : "Export",
+    "description" : "Functions to directly retrieve a converted blockchain object.\n"
+  } ],
+  "paths" : {
+    "/api/{objectType}/{permitId}" : {
+      "get" : {
+        "tags" : [ "Export" ],
+        "summary" : "Export and convert a blockchain object.",
+        "operationId" : "permitXMLExport",
+        "description" : "By passing an ID for a specified blockchain object, this object will be searched on the blockchain, read in and converted into the requeste file format.\nIt will response the content of the file, the object has been converted to.\nGenerated conversion files are stored by the server internally for a specific time.\nIn case the object type is a 'permit' it will be only cached if the permit has been processed already.\nDuring this time in cache, the converted file is reused and the response is quicker.\nCause the RESTful definition of resources, only one object can be retrieved per request.\n",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "objectType",
+          "description" : "The type of object that should be exported and converted from the blockchain.\nA valid type that is supported must be provided!\n",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "permit", "sepcimen" ],
+            "example" : "permit"
+          }
+        }, {
+          "in" : "path",
+          "name" : "permitId",
+          "description" : "The unique ID of the blockchain object to export.\nThe object with this ID have to exist already on the blockchain.\n",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "bytes32",
+            "example" : "0xad080a66d2d81f8c0ed1640f1a0cb049714b33901f9f47797f7842e232c8fef0"
+          }
+        }, {
+          "in" : "query",
+          "name" : "conversion",
+          "description" : "The file format the object should be converted to.\nPer default the 'xml' format is used.\nIf defining one type, it must be a supported one!\n",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "xml", "pdf" ],
+            "default" : "xml",
+            "example" : "xml"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "An already converted file of this object could been found and respond.",
+            "content" : {
+              "application/xml" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CITESPermit"
+                }
+              }
+            }
+          },
+          "201" : {
+            "description" : "The object could been found on the blockchain and has been converted to a new conversion file and respond this.",
+            "content" : {
+              "application/xml" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CITESPermit"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "No object for this ID and that type could been found on the blockchain."
+          },
+          "500" : {
+            "description" : "Something went wrong on the servers internal state."
+          }
+        }
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "CITESPermit" : {
+        "type" : "object",
+        "properties" : {
+          "SpecifiedExchangedDocumentContext" : {
+            "$ref" : "#/components/schemas/SpecifiedExchangedDocumentContext"
+          },
+          "HeaderExchangedDocument" : {
+            "$ref" : "#/components/schemas/HeaderExchangedDocument"
+          },
+          "SpecifiedSupplyChainConsignment" : {
+            "$ref" : "#/components/schemas/SpecifiedSupplyChainConsignment"
+          },
+          "permitId" : {
+            "description" : "The ID of the permit, this document describes.",
+            "type" : "string",
+            "format" : "bytes32",
+            "xml" : {
+              "attribute" : true
+            },
+            "example" : "0xad080a66d2d81f8c0ed1640f1a0cb049714b33901f9f47797f7842e232c8fef0"
+          },
+          "exportCountry" : {
+            "$ref" : "#/components/schemas/country"
+          },
+          "importCountry" : {
+            "$ref" : "#/components/schemas/country"
+          },
+          "permitType" : {
+            "description" : "Enumeration of the permit type.\n0 - export\n1 - re-export\n2 - other\n",
+            "type" : "string",
+            "format" : "uint8",
+            "enum" : [ 0, 1, 2 ],
+            "example" : 1
+          },
+          "importer" : {
+            "$ref" : "#/components/schemas/participant"
+          },
+          "exporter" : {
+            "$ref" : "#/components/schemas/participant"
+          },
+          "processed" : {
+            "description" : "Flag which mark a permit as already processed by the importing country.\nIs set to false per default on creation.\nCan only be set to True once.\n",
+            "type" : "boolean",
+            "format" : "bool",
+            "default" : "False",
+            "example" : "True"
+          },
+          "accepted" : {
+            "description" : "Flag which mark a permit as accepted or not by the importing country.\nWill be set on processing the permit.\nBy this it can be set only once.\nPer default not defined, since the permit gets processed.\n",
+            "type" : "boolean",
+            "format" : "bool",
+            "default" : "undefined",
+            "example" : "False"
+          },
+          "specimens" : {
+            "description" : "The list of specimens which gets ex- and imported by this permit.",
+            "type" : "array",
+            "xml" : {
+              "wrapped" : true,
+              "name" : "specimen"
+            },
+            "items" : {
+              "$ref" : "#/components/schemas/specimen"
+            }
+          }
+        }
+      },
+      "SpecifiedExchangedDocumentContext" : {
+        "description" : "info about the document?",
+        "type" : "object",
+        "properties" : {
+          "BusinessProcessSpecifiedDocumentContextParameter" : {
+            "$ref" : "#/components/schemas/BusinessProcessSpecifiedDocumentContextParameter"
+          },
+          "BIMSpecifiedDocumentContextParameter" : {
+            "$ref" : "#/components/schemas/BIMSpecifiedDocumentContextParameter"
+          }
+        },
+        "items" : {
+          "$ref" : "#/components/schemas/SpecifiedExchangedDocumentContext"
+        }
+      },
+      "BusinessProcessSpecifiedDocumentContextParameter" : {
+        "description" : "I guess this is some document data",
+        "type" : "object",
+        "properties" : {
+          "Value" : {
+            "description" : "some description I guess...",
+            "type" : "string"
+          },
+          "SpecifiedDocumentVersion" : {
+            "description" : "document version",
+            "type" : "object",
+            "properties" : {
+              "ID" : {
+                "description" : "document id",
+                "type" : "string"
+              }
+            }
+          }
+        }
+      },
+      "BIMSpecifiedDocumentContextParameter" : {
+        "description" : "more data?",
+        "type" : "object",
+        "properties" : {
+          "ID" : {
+            "description" : "more ids",
+            "type" : "string"
+          },
+          "SpecifiedDocumentVersion" : {
+            "description" : "document version",
+            "type" : "object",
+            "properties" : {
+              "ID" : {
+                "description" : "document id",
+                "type" : "string"
+              },
+              "IssueDateTime" : {
+                "description" : "time of issue",
+                "type" : "string",
+                "format" : "date"
+              }
+            }
+          }
+        }
+      },
+      "HeaderExchangedDocument" : {
+        "description" : "yee",
+        "type" : "object",
+        "properties" : {
+          "ID" : {
+            "description" : "some id Again",
+            "type" : "string"
+          },
+          "Name" : {
+            "description" : "some optional name",
+            "type" : "string"
+          },
+          "TypeCode" : {
+            "$ref" : "#/components/schemas/TypeCode"
+          },
+          "IssueDateTime" : {
+            "description" : "time of issue",
+            "type" : "string",
+            "format" : "date"
+          },
+          "CopyIndicator" : {
+            "description" : "if copy or not?",
+            "type" : "boolean"
+          },
+          "Purpose" : {
+            "description" : "optional",
+            "type" : "string"
+          },
+          "PurposeCode" : {
+            "description" : "purpose of ex- or import",
+            "type" : "string",
+            "enum" : [ "B", "E", "G", "H", "L", "M", "N", "P", "Q", "S", "T", "Z" ]
+          },
+          "Information" : {
+            "description" : "additional information",
+            "type" : "string"
+          },
+          "ReferenceReferencedDocument" : {
+            "$ref" : "#/components/schemas/ReferenceReferencedDocument"
+          },
+          "EffectiveSpecifiedPeriod" : {
+            "$ref" : "#/components/schemas/EffectiveSpecifiedPeriod"
+          },
+          "IssueLogisticsLocation" : {
+            "$ref" : "#/components/schemas/IssueLogisticsLocation"
+          },
+          "FirstSignatoryDocumentAuthentication" : {
+            "$ref" : "#/components/schemas/FirstSignatoryDocumentAuthentication"
+          },
+          "SecondSignatoryDocumentAuthentication" : {
+            "allOf" : [ {
+              "type" : "object",
+              "properties" : {
+                "TypeCode" : {
+                  "type" : "string",
+                  "enum" : [ "B" ]
+                }
+              }
+            }, {
+              "$ref" : "#/components/schemas/SignatoryDocumentAuthentication"
+            } ]
+          },
+          "ThirdSignatoryDocumentAuthentication" : {
+            "allOf" : [ {
+              "type" : "object",
+              "properties" : {
+                "TypeCode" : {
+                  "type" : "string",
+                  "enum" : [ "C" ]
+                }
+              }
+            }, {
+              "$ref" : "#/components/schemas/SignatoryDocumentAuthentication"
+            } ]
+          },
+          "FourthSignatoryDocumentAuthentication" : {
+            "allOf" : [ {
+              "type" : "object",
+              "properties" : {
+                "TypeCode" : {
+                  "type" : "string",
+                  "enum" : [ "D" ]
+                }
+              }
+            }, {
+              "$ref" : "#/components/schemas/SignatoryDocumentAuthentication"
+            } ]
+          }
+        }
+      },
+      "ReferenceReferencedDocument" : {
+        "description" : "referenced document?",
+        "type" : "object",
+        "properties" : {
+          "TypeCode" : {
+            "$ref" : "#/components/schemas/TypeCode"
+          },
+          "ID" : {
+            "description" : "document id?",
+            "type" : "string"
+          },
+          "Name" : {
+            "description" : "optional",
+            "type" : "string"
+          },
+          "EffectiveSpecifiedPeriod" : {
+            "$ref" : "#/components/schemas/EffectiveSpecifiedPeriod"
+          }
+        }
+      },
+      "EffectiveSpecifiedPeriod" : {
+        "description" : "period of valididty?",
+        "type" : "object",
+        "properties" : {
+          "StartDateTime" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "EndDateTime" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        }
+      },
+      "IssueLogisticsLocation" : {
+        "description" : "location of issue?",
+        "type" : "object",
+        "properties" : {
+          "ID" : {
+            "type" : "string"
+          },
+          "Name" : {
+            "type" : "string"
+          }
+        }
+      },
+      "TypeCode" : {
+        "description" : "type of permit",
+        "type" : "string",
+        "enum" : [ "E", "I", "O", "R" ]
+      },
+      "FirstSignatoryDocumentAuthentication" : {
+        "type" : "object",
+        "properties" : {
+          "TypeCode" : {
+            "description" : "optional",
+            "type" : "string",
+            "enum" : [ "A" ]
+          },
+          "ID" : {
+            "description" : "optional",
+            "type" : "string"
+          },
+          "Statement" : {
+            "description" : "optional",
+            "type" : "string"
+          },
+          "ProviderTradeParty" : {
+            "$ref" : "#/components/schemas/TradeParty"
+          }
+        }
+      },
+      "TradePartyAddress" : {
+        "type" : "object",
+        "properties" : {
+          "ID" : {
+            "type" : "string"
+          },
+          "Name" : {
+            "type" : "string"
+          },
+          "PostalTradeAddress" : {
+            "$ref" : "#/components/schemas/PostalTradeAddress"
+          }
+        }
+      },
+      "TradeParty" : {
+        "description" : "provider data",
+        "type" : "object",
+        "properties" : {
+          "ID" : {
+            "type" : "string"
+          },
+          "Name" : {
+            "type" : "string"
+          },
+          "PostalTradeAddress" : {
+            "$ref" : "#/components/schemas/PostalTradeAddress"
+          },
+          "SpecifiedRepresentativePerson" : {
+            "description" : "optional",
+            "type" : "object",
+            "properties" : {
+              "Name" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      },
+      "PostalTradeAddress" : {
+        "type" : "object",
+        "properties" : {
+          "PostcodeCode" : {
+            "type" : "integer"
+          },
+          "PostOfficeBox" : {
+            "type" : "string"
+          },
+          "StreetName" : {
+            "type" : "string"
+          },
+          "CityName" : {
+            "type" : "string"
+          },
+          "CountryID" : {
+            "type" : "string"
+          },
+          "CountryName" : {
+            "description" : "optional",
+            "type" : "string"
+          },
+          "CountrySubDivisionName" : {
+            "description" : "optional",
+            "type" : "string"
+          }
+        }
+      },
+      "SignatoryDocumentAuthentication" : {
+        "type" : "object",
+        "properties" : {
+          "ActualDateTime" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "ID" : {
+            "type" : "string"
+          },
+          "Statement" : {
+            "type" : "string"
+          },
+          "ProviderTradeParty" : {
+            "$ref" : "#/components/schemas/SignatoryProviderTradeParty"
+          },
+          "IssueLogisticsLocation" : {
+            "type" : "object",
+            "properties" : {
+              "ID" : {
+                "type" : "string"
+              },
+              "Name" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      },
+      "SignatoryProviderTradeParty" : {
+        "type" : "object",
+        "properties" : {
+          "Name" : {
+            "type" : "string"
+          },
+          "SpecifiedAuthoritativeSignatoryPerson" : {
+            "type" : "object",
+            "properties" : {
+              "Name" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      },
+      "SpecifiedSupplyChainConsignment" : {
+        "type" : "object",
+        "properties" : {
+          "ConsignorTradeParty" : {
+            "$ref" : "#/components/schemas/TradePartyAddress"
+          },
+          "ConsigneeTradeParty" : {
+            "$ref" : "#/components/schemas/TradePartyAddress"
+          },
+          "TransportContractReferencedDocument" : {
+            "type" : "object",
+            "properties" : {
+              "TypeCode" : {
+                "type" : "string"
+              },
+              "ID" : {
+                "type" : "string"
+              }
+            }
+          },
+          "ExaminationTransportEvent" : {
+            "$ref" : "#/components/schemas/ExaminationTransportEvent"
+          },
+          "IncludedSupplyChainConsignmentItem" : {
+            "$ref" : "#/components/schemas/IncludedSupplyChainConsignmentItem"
+          }
+        }
+      },
+      "ExaminationTransportEvent" : {
+        "type" : "object",
+        "properties" : {
+          "ActualOccurenceDateTime" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "OccurenceLogisticsLocation" : {
+            "type" : "object",
+            "properties" : {
+              "ID" : {
+                "type" : "string"
+              },
+              "Name" : {
+                "type" : "string"
+              }
+            }
+          },
+          "CertifyingTradeParty" : {
+            "type" : "object",
+            "properties" : {
+              "SpecifiedAuthoritativeSignatoryPerson" : {
+                "type" : "object",
+                "properties" : {
+                  "Name" : {
+                    "type" : "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "IncludedSupplyChainConsignmentItem" : {
+        "type" : "object",
+        "properties" : {
+          "ID" : {
+            "type" : "string",
+            "enum" : [ "A", "B", "C", "D" ]
+          },
+          "PhysicalLogisticsShippingMarks" : {
+            "type" : "object",
+            "properties" : {
+              "Marking" : {
+                "type" : "string"
+              }
+            }
+          },
+          "OriginTradeCountry" : {
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IDName"
+            } ]
+          },
+          "ExportTradeCountry" : {
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IDName"
+            } ]
+          },
+          "AssociatedReferencedDocument" : {
+            "type" : "object",
+            "properties" : {
+              "IssueDateTime" : {
+                "type" : "string",
+                "format" : "date"
+              },
+              "TypeCode" : {
+                "type" : "string",
+                "enum" : [ "E", "R" ]
+              },
+              "ID" : {
+                "type" : "string"
+              }
+            }
+          },
+          "TransportLogisticsPackage" : {
+            "type" : "object",
+            "properties" : {
+              "ItemQuantity" : {
+                "$ref" : "#/components/schemas/Quantity"
+              }
+            }
+          },
+          "IncludedSupplyChainTradleLineItem" : {
+            "type" : "object",
+            "properties" : {
+              "TypeCode" : {
+                "type" : "string",
+                "enum" : [ "I", "II", "III" ]
+              },
+              "TypeExtensionCode" : {
+                "type" : "string",
+                "enum" : [ "A", "C", "D", "F", "I", "O", "R", "U", "W" ]
+              },
+              "SpecifiedTradeProduct" : {
+                "$ref" : "#/components/schemas/SpecifiedTradeProduct"
+              }
+            }
+          },
+          "ExaminationTransprtEvent" : {
+            "type" : "object",
+            "properties" : {
+              "UnitQuantity" : {
+                "$ref" : "#/components/schemas/Quantity"
+              }
+            }
+          },
+          "ApplicableCrossBorderRegulatoryProcedure" : {
+            "type" : "object",
+            "properties" : {
+              "CategoryCode" : {
+                "type" : "string"
+              },
+              "UsedToDateQuotaQuantity" : {
+                "$ref" : "#/components/schemas/Quantity"
+              },
+              "AnnualQuotaQuantity" : {
+                "$ref" : "#/components/schemas/Quantity"
+              },
+              "AcquisitionDateTime" : {
+                "type" : "string",
+                "format" : "date"
+              },
+              "PreviousReferencedDocument" : {
+                "type" : "object",
+                "properties" : {
+                  "IssueDateTime" : {
+                    "type" : "string",
+                    "format" : "date"
+                  },
+                  "TypeCode" : {
+                    "type" : "string"
+                  },
+                  "ID" : {
+                    "type" : "string"
+                  },
+                  "Name" : {
+                    "type" : "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "SpecifiedTradeProduct" : {
+        "type" : "object",
+        "properties" : {
+          "SellerAssignedID" : {
+            "type" : "string"
+          },
+          "ManufacturerAssignedID" : {
+            "type" : "string"
+          },
+          "Description" : {
+            "type" : "string"
+          },
+          "TypeCode" : {
+            "type" : "string",
+            "enum" : [ "BAR", "BEL", "BOC", "BOD", "BON", "BOP", "BPR", "BUL", "CAL", "CAP", "CAR", "CHP", "CLA", "CLO", "COR", "COS", "CST", "CUL", "DER", "DPL", "EAR", "EGG", "EGL", "EXT", "FEA", "FIB", "FIN", "FLO", "FOO", "FPT", "FRA", "FRN", "FRU", "GAB", "GAL", "GAR", "GEN", "GRS", "HAI", "HAN", "HAP", "HEA", "HOC", "HOP", "HOR", "HOS", "HPR", "IVC", "IVP", "IVS", "LEA", "LIV", "LOG", "LPL", "LPS", "LVS", "MEA", "MUS", "OIL", "OTH", "PEA", "PIE", "PKY", "PLA", "POW", "QUI", "ROO", "SAW", "SCA", "SCR", "SEE", "SHE", "SHO", "SKD", "SKE", "SKI", "SKO", "SKP", "SKS", "SKU", "SOU", "SPE", "SPO", "STE", "SWI", "TAI", "TEE", "TIC", "TIM", "TIP", "TIS", "TRO", "TUS", "UNS", "VEN", "VNM", "WAL", "WAT", "WAX", "WOO" ]
+          },
+          "CommonName" : {
+            "type" : "string"
+          },
+          "ScientificName" : {
+            "type" : "string"
+          }
+        }
+      },
+      "Quantity" : {
+        "type" : "string",
+        "enum" : [ "BAG", "BAK", "BOT", "BOX", "BSK", "CAN", "CAS", "CCM", "CRT", "CUF", "CUM", "FEE", "FLA", "HRN", "INC", "ITE", "KIL", "MYG", "OUN", "PAI", "PCS", "PND", "SHP", "SID", "SKI", "SQC", "SQD", "SQF", "SQM", "TON" ]
+      },
+      "IDName" : {
+        "type" : "object",
+        "properties" : {
+          "ID" : {
+            "type" : "string"
+          },
+          "Name" : {
+            "type" : "string"
+          }
+        }
+      },
+      "country" : {
+        "description" : "The two char long code of the ex- or importing country",
+        "type" : "string",
+        "format" : "bytes2",
+        "example" : "DE"
+      },
+      "participant" : {
+        "description" : "A participant which is either the exporter who order this permit or the importer who gets the specimens.\n",
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "description" : "The given and surname of the participant.",
+            "type" : "string",
+            "format" : "bytes32",
+            "example" : "Harry Smith"
+          },
+          "street" : {
+            "description" : "The official street and house number of the participant.",
+            "type" : "string",
+            "format" : "bytes32",
+            "example" : "Regent Street 16"
+          },
+          "city" : {
+            "description" : "The city where the participant is registered.",
+            "type" : "string",
+            "format" : "bytes32",
+            "example" : "London"
+          }
+        }
+      },
+      "specimen" : {
+        "description" : "A specified animal type which gets ex- and imported by a permit.\nThey are grouped by their specie and summed up to a given quantitiy.\n",
+        "type" : "object",
+        "properties" : {
+          "quantitiy" : {
+            "description" : "The number of units exported of this specimen.",
+            "type" : "integer",
+            "format" : "uint",
+            "example" : 7
+          },
+          "scientificName" : {
+            "description" : "The scientific name of this specimen.",
+            "type" : "string",
+            "format" : "bytes32",
+            "example" : "Crocodylia"
+          },
+          "commonName" : {
+            "description" : "The common name of this specimen.",
+            "type" : "string",
+            "format" : "bytes32",
+            "example" : "Crocodile"
+          },
+          "description" : {
+            "description" : "Some additional notes for this specimen for this permit.",
+            "type" : "string",
+            "format" : "bytes32",
+            "example" : "Big green alligators"
+          },
+          "originId" : {
+            "description" : "The ID of the permit this units have get exported the first time.\nLeaves empty if this is the first export.\n",
+            "type" : "string",
+            "format" : "bytes32",
+            "default" : "",
+            "example" : "0xs7dfe66d2dd81f8c0ed16dwdnj8jid2365hd7637d4hjuf78322k42e232ded38d"
+          },
+          "reExportId" : {
+            "description" : "The ID of the last permit this units have been exported before this one.\nLeaves empty if this is the first export.\nIs same as the origin ID, if this is the second export.\n",
+            "type" : "string",
+            "format" : "bytes32",
+            "default" : "",
+            "example" : "0x89213mdkd012d3njnkjnhjhsdc7wasqqq7euonjbe282ew280123jnj40bk213kj"
+          }
+        }
+      }
+    }
+  }
+}
