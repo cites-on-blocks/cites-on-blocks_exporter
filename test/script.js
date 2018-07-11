@@ -19,6 +19,10 @@ let permitHash = undefined
 if (process.argv[2] !== undefined) {
   if (fs.lstatSync(process.argv[2]).isDirectory()) {
     DAPP_PATH = process.argv[2]
+
+    if (DAPP_PATH.slice(-1) != '/') {
+      DAPP_PATH = DAPP_PATH + '/'
+    }
   }
 }
 
