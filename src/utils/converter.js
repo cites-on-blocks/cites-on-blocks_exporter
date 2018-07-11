@@ -55,49 +55,8 @@ async function restructurePermitToStandardFormat(permitId, permitObject) {
 
   // Build a modified JSON by the original one.
   let restructuredPermit = {}
-  restructuredPermit._attributes = { id: permitId }
 
-  // Export/Import Country
-  restructuredPermit[xmlPropertyKeys.PERMIT.EXPORT_COUNTRY] = await hex2String(
-    permitObject[0]
-  )
-
-  restructuredPermit[xmlPropertyKeys.PERMIT.IMPORT_COUNTRY] = await hex2String(
-    permitObject[1]
-  )
-
-  // Permit Type
-  restructuredPermit[xmlPropertyKeys.PERMIT.TYPE] = permitObject[2].toString()
-
-  // Importer
-  restructuredPermit[xmlPropertyKeys.PERMIT.IMPORTER] = {}
-  restructuredPermit[xmlPropertyKeys.PERMIT.IMPORTER][
-    xmlPropertyKeys.PARTICIPANT.NAME
-  ] = await hex2String(permitObject[4][0])
-
-  restructuredPermit[xmlPropertyKeys.PERMIT.IMPORTER][
-    xmlPropertyKeys.PARTICIPANT.STREET
-  ] = await hex2String(permitObject[4][1])
-
-  restructuredPermit[xmlPropertyKeys.PERMIT.IMPORTER][
-    xmlPropertyKeys.PARTICIPANT.CITY
-  ] = await hex2String(permitObject[4][2])
-
-  // Exporter
-  restructuredPermit[xmlPropertyKeys.PERMIT.EXPORTER] = {}
-  restructuredPermit[xmlPropertyKeys.PERMIT.EXPORTER][
-    xmlPropertyKeys.PARTICIPANT.NAME
-  ] = await hex2String(permitObject[3][0])
-
-  restructuredPermit[xmlPropertyKeys.PERMIT.EXPORTER][
-    xmlPropertyKeys.PARTICIPANT.STREET
-  ] = await hex2String(permitObject[3][1])
-
-  restructuredPermit[xmlPropertyKeys.PERMIT.EXPORTER][
-    xmlPropertyKeys.PARTICIPANT.CITY
-  ] = await hex2String(permitObject[3][2])
-
-  // Processed & Accepted Flags
+  // Flags
   restructuredPermit[
     xmlPropertyKeys.PERMIT.PROCESSED
   ] = await contract_reader.isPermitProcessed(permitId)
@@ -106,11 +65,61 @@ async function restructurePermitToStandardFormat(permitId, permitObject) {
     xmlPropertyKeys.PERMIT.ACCEPTED
   ] = await contract_reader.isPermitAccepted(permitId)
 
+  // Header with ID and type.
+  let header = (restructuredPermit[xmlPropertyKeys.HEADER.BASE] = {})
+  header[xmlPropertyKeys.HEADER.ID] = permitId
+  header[xmlPropertyKeys.HEADER.TYPE] = permitObject[2].toString()
+
+  // Consignment
+  let consignment = (restructuredPermit[xmlPropertyKeys.CONSIGNMENT.BASE] = {})
+
+  // Exporter
+  let consignor = (consignment[xmlPropertyKeys.CONSIGNMENT.CONSIGNOR] = {})
+  consignor[xmlPropertyKeys.PARTICIPANT.NAME] = await hex2String(
+    permitObject[3][0]
+  )
+
+  let consignorAddress = (consignor[
+    xmlPropertyKeys.PARTICIPANT.ADDRESS.BASE
+  ] = {})
+
+  consignorAddress[
+    xmlPropertyKeys.PARTICIPANT.ADDRESS.STREET
+  ] = await hex2String(permitObject[3][1])
+
+  consignorAddress[xmlPropertyKeys.PARTICIPANT.ADDRESS.CITY] = await hex2String(
+    permitObject[3][2]
+  )
+
+  consignorAddress[
+    xmlPropertyKeys.PARTICIPANT.ADDRESS.COUNTRY
+  ] = await hex2String(permitObject[0])
+
+  // Importer
+  let consignee = (consignment[xmlPropertyKeys.CONSIGNMENT.CONSIGNEE] = {})
+  consignee[xmlPropertyKeys.PARTICIPANT.NAME] = await hex2String(
+    permitObject[4][0]
+  )
+
+  let consigneeAddress = (consignee[
+    xmlPropertyKeys.PARTICIPANT.ADDRESS.BASE
+  ] = {})
+
+  consigneeAddress[
+    xmlPropertyKeys.PARTICIPANT.ADDRESS.STREET
+  ] = await hex2String(permitObject[4][1])
+
+  consigneeAddress[xmlPropertyKeys.PARTICIPANT.ADDRESS.CITY] = await hex2String(
+    permitObject[4][2]
+  )
+
+  consigneeAddress[
+    xmlPropertyKeys.PARTICIPANT.ADDRESS.COUNTRY
+  ] = await hex2String(permitObject[1])
+
   // Specimens
-  restructuredPermit[xmlPropertyKeys.PERMIT.SPECIMENS] = {}
-  restructuredPermit[xmlPropertyKeys.PERMIT.SPECIMENS][
-    xmlPropertyKeys.SPECIMEN.BASE
-  ] = []
+  let specimens = (consignment[xmlPropertyKeys.CONSIGNMENT.SPECIMENS] = {})
+  specimens[xmlPropertyKeys.SPECIMEN.BASE] = []
 
   for (let i in permitObject[5]) {
     // Get the specimen of this index by its ID, convert and add it to the list.
@@ -125,9 +134,7 @@ async function restructurePermitToStandardFormat(permitId, permitObject) {
       true
     )
 
-    restructuredPermit[xmlPropertyKeys.PERMIT.SPECIMENS][
-      xmlPropertyKeys.SPECIMEN.BASE
-    ].push(specimen)
+    specimens[xmlPropertyKeys.SPECIMEN.BASE].push(specimen)
   }
 
   // Put this into a big outer tag (do it here to save code above).
@@ -160,32 +167,36 @@ async function restructureSpecimenToStandardFormat(
 
   // Build a modified JSON by the original one.
   let restructuredSpecimen = {}
-  restructuredSpecimen._attributes = { id: specimenId }
 
-  // Permit Hash & Quantity
-  restructuredSpecimen[xmlPropertyKeys.SPECIMEN.PERMIT_ID] = specimenObject[0]
-  restructuredSpecimen[
-    xmlPropertyKeys.SPECIMEN.QUANTITY
+  // ID, origin- and re-export hashes.
+  restructuredSpecimen[xmlPropertyKeys.SPECIMEN.ID] = specimenId
+  restructuredSpecimen[xmlPropertyKeys.SPECIMEN.ORIGIN_HASH] = specimenObject[5]
+  restructuredSpecimen[xmlPropertyKeys.SPECIMEN.RE_EXPORT_HASH] =
+    specimenObject[6]
+
+  // Transport
+  let transport = (restructuredSpecimen[
+    xmlPropertyKeys.SPECIMEN.TRANSPORT.BASE
+  ] = {})
+
+  transport[
+    xmlPropertyKeys.SPECIMEN.TRANSPORT.QUANTITY
   ] = specimenObject[1].toString()
 
-  // Names & Description
-  restructuredSpecimen[
-    xmlPropertyKeys.SPECIMEN.SCIENTIFIC_NAME
-  ] = await hex2String(specimenObject[2])
-  restructuredSpecimen[xmlPropertyKeys.SPECIMEN.COMMON_NAME] = await hex2String(
-    specimenObject[3]
-  )
-  restructuredSpecimen[xmlPropertyKeys.SPECIMEN.DESCRIPTION] = await hex2String(
+  // Item & Product
+  let item = (restructuredSpecimen[xmlPropertyKeys.SPECIMEN.ITEM.BASE] = {})
+  let product = (item[xmlPropertyKeys.SPECIMEN.ITEM.PRODUCT.BASE] = {})
+  product[xmlPropertyKeys.SPECIMEN.ITEM.PRODUCT.DESCRIPTION] = await hex2String(
     specimenObject[4]
   )
 
-  // Origin & Re-Export Hashes
-  restructuredSpecimen[xmlPropertyKeys.SPECIMEN.ORIGIN_HASH] = await hex2String(
-    specimenObject[5]
+  product[xmlPropertyKeys.SPECIMEN.ITEM.PRODUCT.COMMON_NAME] = await hex2String(
+    specimenObject[3]
   )
-  restructuredSpecimen[
-    xmlPropertyKeys.SPECIMEN.RE_EXPORT_HASH
-  ] = await hex2String(specimenObject[6])
+
+  product[
+    xmlPropertyKeys.SPECIMEN.ITEM.PRODUCT.SCIENTIFIC_NAME
+  ] = await hex2String(specimenObject[2])
 
   // Check if this have to be put into an outer tag.
   let standardFormat
